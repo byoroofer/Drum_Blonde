@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --bg: #090d14;
   --bg-soft: #131924;
   --card: rgba(18, 24, 36, 0.86);
@@ -178,7 +178,7 @@ button { cursor: pointer; }
 .rail-link { padding: 0.85rem 1rem; border-radius: 16px; color: var(--muted); }
 .rail-link--active, .rail-link:hover { background: rgba(255, 255, 255, 0.05); color: var(--text); }
 .dashboard-main { padding: 1.6rem; }
-.page-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; align-items: end; }
+.page-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; align-items: flex-end; }
 .inline-alert { margin-top: 1rem; padding: 0.95rem 1rem; border-radius: 16px; border: 1px solid rgba(247, 183, 77, 0.35); background: rgba(247, 183, 77, 0.12); }
 .inline-alert--error { border-color: rgba(255, 107, 127, 0.35); background: rgba(255, 107, 127, 0.1); }
 .section-card__head h2, .panel-head h2 { margin: 0; font-size: 1.25rem; }
@@ -187,7 +187,7 @@ button { cursor: pointer; }
 .asset-card__media { width: 100%; aspect-ratio: 9 / 12; object-fit: cover; background: #070b11; }
 .asset-card__media--placeholder { display: grid; place-items: center; color: var(--muted); }
 .asset-card__body, .asset-row, .policy-row { padding: 1rem; }
-.asset-card__head, .asset-row, .policy-row, .row-meta { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
+.asset-card__head, .asset-row, .policy-row, .row-meta { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
 .policy-row--stacked { display: grid; gap: 0.35rem; }
 .row-meta { flex-direction: column; align-items: end; color: var(--muted); font-size: 0.92rem; }
 .status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.38rem 0.7rem; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.04); font-size: 0.82rem; text-transform: capitalize; }
@@ -205,3 +205,35 @@ button { cursor: pointer; }
   .landing-shell, .page-stack, .login-shell { width: min(100vw - 1rem, 1200px); }
 }
 
+.picker-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  color: var(--muted);
+}
+
+.picker-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.picker-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.9rem;
+  align-items: start;
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.picker-item strong {
+  display: block;
+}
+
+.picker-item p {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+}

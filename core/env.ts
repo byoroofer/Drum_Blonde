@@ -1,4 +1,4 @@
-﻿function readEnv(name: string) {
+function readEnv(name: string) {
   return String(process.env[name] ?? "").trim();
 }
 
@@ -25,8 +25,10 @@ export const env = {
   livePublishingEnabled: readBoolean("PUBLISHER_ENABLE_LIVE_WRITES", false),
   metaAppId: readEnv("META_APP_ID"),
   metaAppSecret: readEnv("META_APP_SECRET"),
-  googleClientId: readEnv("GOOGLE_CLIENT_ID"),
-  googleClientSecret: readEnv("GOOGLE_CLIENT_SECRET"),
+  googleClientId: readEnv("GOOGLE_CLIENT_ID") || readEnv("GOOGLE_OAUTH_CLIENT_ID"),
+  googleClientSecret: readEnv("GOOGLE_CLIENT_SECRET") || readEnv("GOOGLE_OAUTH_CLIENT_SECRET"),
+  googlePhotosAccessToken: readEnv("GOOGLE_PHOTOS_ACCESS_TOKEN"),
+  googlePhotosRefreshToken: readEnv("GOOGLE_PHOTOS_REFRESH_TOKEN"),
   tiktokClientKey: readEnv("TIKTOK_CLIENT_KEY"),
   tiktokClientSecret: readEnv("TIKTOK_CLIENT_SECRET"),
   xClientId: readEnv("X_CLIENT_ID"),
@@ -47,7 +49,30 @@ export function isDemoMode() {
   return !hasSupabaseEnv();
 }
 
+export function getGooglePhotosPickerStatus() {
+  const missing: string[] = [];
+
+  if (!env.googleClientId) {
+    missing.push("GOOGLE_CLIENT_ID or GOOGLE_OAUTH_CLIENT_ID");
+  }
+
+  if (!env.googleClientSecret) {
+    missing.push("GOOGLE_CLIENT_SECRET or GOOGLE_OAUTH_CLIENT_SECRET");
+  }
+
+  if (!env.googlePhotosRefreshToken && !env.googlePhotosAccessToken) {
+    missing.push("GOOGLE_PHOTOS_REFRESH_TOKEN or GOOGLE_PHOTOS_ACCESS_TOKEN");
+  }
+
+  return {
+    ready: missing.length === 0,
+    missing
+  };
+}
+
 export function getEnvironmentChecklist() {
+  const googlePhotosPicker = getGooglePhotosPickerStatus();
+
   return [
     { name: "NEXT_PUBLIC_APP_URL", configured: Boolean(env.appUrl), required: true, purpose: "App callbacks and manual handoff links." },
     { name: "NEXT_PUBLIC_SUPABASE_URL", configured: Boolean(env.supabaseUrl), required: true, purpose: "Supabase API endpoint." },
@@ -59,8 +84,9 @@ export function getEnvironmentChecklist() {
     { name: "WORKER_SHARED_SECRET", configured: Boolean(env.workerSharedSecret), required: true, purpose: "Protects the publish worker endpoint." },
     { name: "META_APP_ID", configured: Boolean(env.metaAppId), required: false, purpose: "Future Instagram/Facebook official OAuth." },
     { name: "META_APP_SECRET", configured: Boolean(env.metaAppSecret), required: false, purpose: "Future Instagram/Facebook token exchange." },
-    { name: "GOOGLE_CLIENT_ID", configured: Boolean(env.googleClientId), required: false, purpose: "Future YouTube OAuth and upload flows." },
-    { name: "GOOGLE_CLIENT_SECRET", configured: Boolean(env.googleClientSecret), required: false, purpose: "Future YouTube OAuth and upload flows." },
+    { name: "GOOGLE_CLIENT_ID or GOOGLE_OAUTH_CLIENT_ID", configured: Boolean(env.googleClientId), required: false, purpose: "Google OAuth client for YouTube and Google Photos Picker." },
+    { name: "GOOGLE_CLIENT_SECRET or GOOGLE_OAUTH_CLIENT_SECRET", configured: Boolean(env.googleClientSecret), required: false, purpose: "Google OAuth client secret for YouTube and Google Photos Picker." },
+    { name: "GOOGLE_PHOTOS_REFRESH_TOKEN or GOOGLE_PHOTOS_ACCESS_TOKEN", configured: Boolean(env.googlePhotosRefreshToken || env.googlePhotosAccessToken), required: false, purpose: "Google Photos Picker import. Must be minted with photospicker.mediaitems.readonly." },
     { name: "TIKTOK_CLIENT_KEY", configured: Boolean(env.tiktokClientKey), required: false, purpose: "Future TikTok Content Posting API OAuth." },
     { name: "TIKTOK_CLIENT_SECRET", configured: Boolean(env.tiktokClientSecret), required: false, purpose: "Future TikTok Content Posting API OAuth." },
     { name: "X_CLIENT_ID", configured: Boolean(env.xClientId), required: false, purpose: "Future X API OAuth." },
@@ -73,4 +99,3 @@ export function getEnvironmentChecklist() {
     { name: "TWITCH_CLIENT_SECRET", configured: Boolean(env.twitchClientSecret), required: false, purpose: "Future Twitch clip ingestion." }
   ];
 }
-

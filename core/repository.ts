@@ -1,4 +1,4 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import { buildCaptionVariants } from "@/core/caption-engine";
 import { buildDemoDashboardSnapshot } from "@/core/demo-data";
 import { env, hasSupabaseEnv, isDemoMode } from "@/core/env";
@@ -19,6 +19,7 @@ import type {
   RepositoryActionResult
 } from "@/core/types";
 import { inspectUploadedVideo } from "@/core/video";
+import { downloadPickedMediaItem, listGooglePhotosPickedItems } from "@/core/google-photos-picker";
 
 const MANUAL_INSTRUCTIONS: Record<Platform, string> = {
   tiktok: "Post through TikTok's approved creator workflow with the prepared caption package.",
@@ -650,3 +651,83 @@ export async function runQueuedJobs(limit = 10) {
 
 
 
+
+export async function importGooglePhotosSelection({
+  actor,
+  sessionId,
+  selectedIds,
+  titlePrefix,
+  description,
+  creatorNotes,
+  campaign,
+  voicePreset,
+  tags,
+  destinations,
+  scheduledFor,
+  approvalPolicy
+}: {
+  actor: DashboardUser;
+  sessionId: string;
+  selectedIds: string[];
+  titlePrefix: string;
+  description: string;
+  creatorNotes: string | null;
+  campaign: string | null;
+  voicePreset: IngestInput["voicePreset"];
+  tags: string[];
+  destinations: Platform[];
+  scheduledFor: string | null;
+  approvalPolicy: IngestInput["approvalPolicy"];
+}) {
+  const pickedItems = await listGooglePhotosPickedItems(sessionId);
+  const desiredIds = new Set(selectedIds.filter(Boolean));
+  const itemsToImport = desiredIds.size
+    ? pickedItems.filter((item) => desiredIds.has(item.id))
+    : pickedItems;
+
+  const importedAssetIds: string[] = [];
+  const skippedIds: string[] = [];
+
+  for (const item of itemsToImport) {
+    try {
+      const buffer = await downloadPickedMediaItem(item);
+      const file = new File([buffer], item.filename, {
+        type: item.mimeType || "application/octet-stream",
+        lastModified: item.createTime ? new Date(item.createTime).getTime() : Date.now()
+      });
+
+      const baseName = item.filename.replace(/\.[^.]+$/, "");
+      const title = titlePrefix ? `${titlePrefix} ${baseName}`.trim() : baseName;
+      const result = await ingestMedia({
+        actor,
+        file,
+        title,
+        description,
+        sourcePlatform: "library",
+        sourceUrl: `google-photos-picker:${item.id}`,
+        creatorNotes,
+        campaign,
+        voicePreset,
+        tags,
+        destinations,
+        scheduledFor,
+        approvalPolicy
+      });
+
+      if (result.ok) {
+        importedAssetIds.push(item.id);
+      } else {
+        skippedIds.push(item.id);
+      }
+    } catch {
+      skippedIds.push(item.id);
+    }
+  }
+
+  return {
+    importedCount: importedAssetIds.length,
+    importedAssetIds,
+    skippedCount: skippedIds.length,
+    skippedIds
+  };
+}

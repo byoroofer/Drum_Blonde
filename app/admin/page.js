@@ -1,6 +1,7 @@
-﻿import { logoutAction, ingestMediaAction, queueAssetAction, reviewAssetAction, runJobsAction } from "@/app/admin/actions";
+import { logoutAction, ingestMediaAction, queueAssetAction, reviewAssetAction, runJobsAction } from "@/app/admin/actions";
+import GooglePhotosPickerPanel from "@/components/google-photos-picker-panel";
 import { EmptyState, MetricCard, PageHeader, SectionCard, StatusPill } from "@/components/ui";
-import { getEnvironmentChecklist } from "@/core/env";
+import { getEnvironmentChecklist, getGooglePhotosPickerStatus } from "@/core/env";
 import { getDestinationPlatforms } from "@/core/platforms";
 import { getDashboardSnapshot } from "@/core/repository";
 import { requireDashboardUser } from "@/core/auth";
@@ -46,7 +47,7 @@ function DashboardTab({ snapshot }) {
               <article key={asset.id} className="asset-row">
                 <div>
                   <strong>{asset.title}</strong>
-                  <p>{asset.tags.join(" • ") || "No tags yet"}</p>
+                  <p>{asset.tags.join(" | ") || "No tags yet"}</p>
                 </div>
                 <div className="row-meta">
                   <StatusPill tone={asset.approvalStatus === "approved" ? "good" : asset.approvalStatus === "pending" ? "warn" : "soft"}>{asset.approvalStatus}</StatusPill>
@@ -76,9 +77,11 @@ function DashboardTab({ snapshot }) {
 
 function LibraryTab({ snapshot }) {
   const destinations = getDestinationPlatforms();
+  const googlePhotosPicker = getGooglePhotosPickerStatus();
 
   return (
     <div className="content-grid">
+      <GooglePhotosPickerPanel pickerReady={googlePhotosPicker.ready} missingEnv={googlePhotosPicker.missing} />
       <SectionCard title="Ingest media" meta="Upload once, fingerprint once, caption once, distribute safely.">
         <form action={ingestMediaAction} className="stack-form">
           <div className="form-grid">
@@ -151,7 +154,7 @@ function LibraryTab({ snapshot }) {
                     <StatusPill tone={asset.duplicateRisk === "clear" ? "good" : "warn"}>{asset.duplicateRisk}</StatusPill>
                   </div>
                   <p>{asset.description || "No description yet."}</p>
-                  <small>{asset.tags.join(" • ") || "No tags"}</small>
+                  <small>{asset.tags.join(" | ") || "No tags"}</small>
                   <div className="badge-row">
                     <StatusPill tone={asset.approvalStatus === "approved" ? "good" : asset.approvalStatus === "pending" ? "warn" : "soft"}>{asset.approvalStatus}</StatusPill>
                     <StatusPill>{asset.status}</StatusPill>
@@ -174,7 +177,7 @@ function ApprovalsTab({ snapshot }) {
   return (
     <div className="list-stack">
       {pending.map((asset) => (
-        <SectionCard key={asset.id} title={asset.title} meta={`${asset.tags.join(" • ") || "No tags"} • ${asset.targets.length} destinations`}>
+        <SectionCard key={asset.id} title={asset.title} meta={`${asset.tags.join(" | ") || "No tags"} | ${asset.targets.length} destinations`}>
           <div className="approval-card">
             <div>
               <p>{asset.description || "No caption summary yet."}</p>
@@ -215,7 +218,7 @@ function ScheduleTab({ snapshot }) {
         <div className="list-stack">
           {snapshot.assets.filter((asset) => asset.approvalStatus === "approved").map((asset) => (
             <article key={asset.id} className="policy-row">
-              <div><strong>{asset.title}</strong><p>{asset.targets.map((target) => `${target.platform}: ${target.status}`).join(" • ")}</p></div>
+              <div><strong>{asset.title}</strong><p>{asset.targets.map((target) => `${target.platform}: ${target.status}`).join(" | ")}</p></div>
               <form action={queueAssetAction}><input type="hidden" name="assetId" value={asset.id} /><button className="ghost-button" type="submit">Queue again</button></form>
             </article>
           ))}
@@ -233,7 +236,7 @@ function LogsTab({ snapshot }) {
         <div className="list-stack">
           {snapshot.attempts.map((attempt) => (
             <article key={attempt.id} className="asset-row">
-              <div><strong>{attempt.assetTitle}</strong><p>{attempt.platform} • {attempt.responseExcerpt || "No response excerpt"}</p></div>
+              <div><strong>{attempt.assetTitle}</strong><p>{attempt.platform} | {attempt.responseExcerpt || "No response excerpt"}</p></div>
               <div className="row-meta"><StatusPill tone={attempt.status.includes("manual") ? "warn" : attempt.status === "failed" ? "bad" : "soft"}>{attempt.status}</StatusPill><span>{formatDate(attempt.startedAt)}</span></div>
             </article>
           ))}
@@ -266,7 +269,7 @@ function SettingsTab({ snapshot }) {
         </div>
       </SectionCard>
       <SectionCard title="Connected accounts" meta="Store only Brooke-owned destinations and official scopes.">
-        {snapshot.accounts.length ? <div className="list-stack">{snapshot.accounts.map((account) => <article key={account.id} className="policy-row"><div><strong>{account.label}</strong><p>{account.platform} • {account.handle || "No handle saved"}</p></div><div className="row-meta"><StatusPill tone={account.status.toLowerCase().includes("ready") ? "good" : "warn"}>{account.status}</StatusPill><span>{account.publishMode}</span></div></article>)}</div> : <EmptyState title="No accounts linked" copy="Use official OAuth per platform before enabling live direct publishing." />}
+        {snapshot.accounts.length ? <div className="list-stack">{snapshot.accounts.map((account) => <article key={account.id} className="policy-row"><div><strong>{account.label}</strong><p>{account.platform} | {account.handle || "No handle saved"}</p></div><div className="row-meta"><StatusPill tone={account.status.toLowerCase().includes("ready") ? "good" : "warn"}>{account.status}</StatusPill><span>{account.publishMode}</span></div></article>)}</div> : <EmptyState title="No accounts linked" copy="Use official OAuth per platform before enabling live direct publishing." />}
       </SectionCard>
       <SectionCard title="Platform policy" meta="Clear separation between official capability and current execution mode.">
         <div className="list-stack">{snapshot.policies.map((policy) => <article key={policy.platform} className="policy-row policy-row--stacked"><strong>{policy.label}</strong><p>{policy.officialAutomation}</p><small>{policy.mvpExecution}</small></article>)}</div>

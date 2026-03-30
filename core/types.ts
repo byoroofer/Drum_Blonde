@@ -1,4 +1,4 @@
-﻿export type Platform =
+export type Platform =
   | "tiktok"
   | "instagram"
   | "youtube_shorts"
@@ -173,3 +173,31 @@ export interface IngestInput {
   approvalPolicy: "human_required" | "auto_post_approved_only";
 }
 
+
+export interface GooglePhotosPickerSessionSummary {
+  id: string;
+  pickerUri: string;
+  mediaItemsSet: boolean;
+  expireTime: string | null;
+  pollIntervalMs: number;
+  timeoutMs: number;
+}
+
+export interface GooglePhotosPickedItemSummary {
+  id: string;
+  createTime: string | null;
+  type: "PHOTO" | "VIDEO" | "TYPE_UNSPECIFIED";
+  baseUrl: string;
+  mimeType: string;
+  filename: string;
+  width: number | null;
+  height: number | null;
+  videoProcessingStatus: string | null;
+}
+
+export interface GooglePhotosImportSummary {
+  importedCount: number;
+  importedAssetIds: string[];
+  skippedCount: number;
+  skippedIds: string[];
+}
