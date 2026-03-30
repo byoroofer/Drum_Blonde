@@ -1,0 +1,9 @@
+declare module "ffprobe-static" {
+  const ffprobe: { path: string } | null;
+  export default ffprobe;
+}
+
+declare module "ffmpeg-static" {
+  const ffmpegPath: string | null;
+  export default ffmpegPath;
+}

@@ -1,0 +1,31 @@
+{
+  "name": "drum-blonde",
+  "version": "0.2.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "check:env": "node scripts/check-env.mjs",
+    "db:setup": "node scripts/setup-db.mjs",
+    "build": "next build",
+    "start": "next start",
+    "jobs:run": "node scripts/run-worker.mjs"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "@supabase/supabase-js": "^2.101.0",
+    "@vercel/blob": "^2.3.2",
+    "ffmpeg-static": "^5.3.0",
+    "ffprobe-static": "^3.1.0",
+    "hls.js": "^1.6.15",
+    "next": "^15.0.0",
+    "pg": "^8.20.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.2"
+  }
+}
