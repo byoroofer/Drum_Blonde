@@ -52,8 +52,23 @@ export function isDemoMode() {
   return !hasSupabaseEnv();
 }
 
+export function getIntegrationAvailability() {
+  const googlePhotosClientConfigured = Boolean(env.googleClientId && env.googleClientSecret);
+  const googlePhotosCredentialsConfigured = Boolean(env.googlePhotosRefreshToken || env.googlePhotosAccessToken);
+  const smartImportEnabled = Boolean(env.openaiApiKey);
+
+  return {
+    googlePhotosClientConfigured,
+    googlePhotosCredentialsConfigured,
+    googlePhotosEnabled: googlePhotosClientConfigured && googlePhotosCredentialsConfigured,
+    googlePhotosOauthAvailable: googlePhotosClientConfigured,
+    smartImportEnabled
+  };
+}
+
 export function getGooglePhotosPickerStatus() {
   const missing: string[] = [];
+  const integrations = getIntegrationAvailability();
 
   if (!env.googleClientId) {
     missing.push("GOOGLE_CLIENT_ID or GOOGLE_OAUTH_CLIENT_ID");
@@ -63,18 +78,20 @@ export function getGooglePhotosPickerStatus() {
     missing.push("GOOGLE_CLIENT_SECRET or GOOGLE_OAUTH_CLIENT_SECRET");
   }
 
-  if (!env.googlePhotosRefreshToken && !env.googlePhotosAccessToken) {
+  if (!integrations.googlePhotosCredentialsConfigured) {
     missing.push("GOOGLE_PHOTOS_REFRESH_TOKEN or GOOGLE_PHOTOS_ACCESS_TOKEN");
   }
 
   return {
-    ready: missing.length === 0,
-    missing
+    ready: integrations.googlePhotosEnabled,
+    missing,
+    googlePhotosEnabled: integrations.googlePhotosEnabled,
+    googlePhotosOauthAvailable: integrations.googlePhotosOauthAvailable
   };
 }
 
 export function getEnvironmentChecklist() {
-  const googlePhotosPicker = getGooglePhotosPickerStatus();
+  const integrations = getIntegrationAvailability();
 
   return [
     { name: "NEXT_PUBLIC_APP_URL", configured: Boolean(env.appUrl), required: true, purpose: "App callbacks and manual handoff links." },
@@ -87,11 +104,11 @@ export function getEnvironmentChecklist() {
     { name: "WORKER_SHARED_SECRET", configured: Boolean(env.workerSharedSecret), required: true, purpose: "Protects the publish worker endpoint." },
     { name: "META_APP_ID", configured: Boolean(env.metaAppId), required: false, purpose: "Future Instagram/Facebook official OAuth." },
     { name: "META_APP_SECRET", configured: Boolean(env.metaAppSecret), required: false, purpose: "Future Instagram/Facebook token exchange." },
-    { name: "GOOGLE_CLIENT_ID or GOOGLE_OAUTH_CLIENT_ID", configured: Boolean(env.googleClientId), required: false, purpose: "Google OAuth client for YouTube and Google Photos Picker." },
-    { name: "GOOGLE_CLIENT_SECRET or GOOGLE_OAUTH_CLIENT_SECRET", configured: Boolean(env.googleClientSecret), required: false, purpose: "Google OAuth client secret for YouTube and Google Photos Picker." },
-    { name: "GOOGLE_PHOTOS_REFRESH_TOKEN or GOOGLE_PHOTOS_ACCESS_TOKEN", configured: Boolean(env.googlePhotosRefreshToken || env.googlePhotosAccessToken), required: false, purpose: "Google Photos Picker import. Must be minted with photospicker.mediaitems.readonly." },
-    { name: "OPENAI_API_KEY", configured: Boolean(env.openaiApiKey), required: false, purpose: "Server-side OpenAI workflow generation for captions, review notes, and routing logic." },
-    { name: "OPENAI_MODEL", configured: Boolean(env.openaiModel), required: false, purpose: "OpenAI model override for workflow generation. Defaults to gpt-5-mini." },
+    { name: "GOOGLE_CLIENT_ID or GOOGLE_OAUTH_CLIENT_ID", configured: Boolean(env.googleClientId), required: false, purpose: "Google OAuth client for the Google Photos picker connection flow." },
+    { name: "GOOGLE_CLIENT_SECRET or GOOGLE_OAUTH_CLIENT_SECRET", configured: Boolean(env.googleClientSecret), required: false, purpose: "Google OAuth client secret for the Google Photos picker connection flow." },
+    { name: "GOOGLE_PHOTOS_REFRESH_TOKEN or GOOGLE_PHOTOS_ACCESS_TOKEN", configured: integrations.googlePhotosCredentialsConfigured, required: false, purpose: "Optional env-backed Google Photos credentials. The admin can also connect Google Photos interactively when the Google OAuth client vars are present." },
+    { name: "OPENAI_API_KEY", configured: integrations.smartImportEnabled, required: false, purpose: "Optional AI-enhanced caption and review workflow generation. Manual ingest still works without it." },
+    { name: "OPENAI_MODEL", configured: Boolean(env.openaiModel), required: false, purpose: "OpenAI model override for AI-enhanced workflow generation. Defaults to gpt-5-mini." },
     { name: "TIKTOK_CLIENT_KEY", configured: Boolean(env.tiktokClientKey), required: false, purpose: "Future TikTok Content Posting API OAuth." },
     { name: "TIKTOK_CLIENT_SECRET", configured: Boolean(env.tiktokClientSecret), required: false, purpose: "Future TikTok Content Posting API OAuth." },
     { name: "X_CLIENT_ID", configured: Boolean(env.xClientId), required: false, purpose: "Future X API OAuth." },

@@ -1,4 +1,4 @@
-import { env } from "@/core/env";
+import { env, getIntegrationAvailability } from "@/core/env";
 import { buildCaptionVariants } from "@/core/caption-engine";
 import type { Platform, VoicePreset } from "@/core/types";
 
@@ -116,11 +116,11 @@ function normalizeAiBundle(bundle: AiWorkflowBundle, platforms: Platform[]) {
 }
 
 export function hasOpenAIWorkflowSupport() {
-  return Boolean(env.openaiApiKey);
+  return getIntegrationAvailability().smartImportEnabled;
 }
 
 export async function generateWorkflowBundle(input: WorkflowInput) {
-  if (!env.openaiApiKey || !input.platforms.length) {
+  if (!hasOpenAIWorkflowSupport() || !input.platforms.length) {
     return null;
   }
 

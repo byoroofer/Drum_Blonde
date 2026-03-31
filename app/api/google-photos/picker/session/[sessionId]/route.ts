@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/core/auth";
-import { getGooglePhotosPickingSession, listGooglePhotosPickedItems } from "@/core/google-photos-picker";
+import {
+  getGooglePhotosPickerConnectionStatus,
+  getGooglePhotosPickingSession,
+  listGooglePhotosPickedItems
+} from "@/core/google-photos-picker";
 
 export const runtime = "nodejs";
 
@@ -8,6 +12,20 @@ export async function GET(_: Request, context: { params: Promise<{ sessionId: st
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  const status = await getGooglePhotosPickerConnectionStatus();
+  if (!status.ready) {
+    return NextResponse.json(
+      {
+        error: status.detail,
+        missing: status.missing,
+        requiredScope: status.requiredScope,
+        actionHref: status.actionHref,
+        actionLabel: status.actionLabel
+      },
+      { status: 503 }
+    );
   }
 
   const { sessionId } = await context.params;

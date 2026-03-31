@@ -1,7 +1,7 @@
 import { logoutAction, ingestMediaAction, queueAssetAction, reviewAssetAction, runJobsAction } from "@/app/admin/actions";
 import GooglePhotosPickerPanel from "@/components/google-photos-picker-panel";
 import { EmptyState, MetricCard, PageHeader, SectionCard, StatusPill } from "@/components/ui";
-import { getEnvironmentChecklist } from "@/core/env";
+import { getEnvironmentChecklist, getIntegrationAvailability } from "@/core/env";
 import { getGooglePhotosPickerConnectionStatus } from "@/core/google-photos-picker";
 import { getDestinationPlatforms } from "@/core/platforms";
 import { getDashboardSnapshot } from "@/core/repository";
@@ -102,6 +102,7 @@ function DashboardTab({ snapshot }) {
 async function LibraryTab({ snapshot }) {
   const destinations = getDestinationPlatforms();
   const googlePhotosPicker = await getGooglePhotosPickerConnectionStatus();
+  const integrations = getIntegrationAvailability();
 
   return (
     <div className="content-grid">
@@ -114,8 +115,14 @@ async function LibraryTab({ snapshot }) {
         actionLabel={googlePhotosPicker.actionLabel}
         connected={googlePhotosPicker.connected}
         source={googlePhotosPicker.source}
+        tone={googlePhotosPicker.tone}
       />
       <SectionCard title="Ingest media" meta="Upload once, fingerprint once, caption once, distribute safely.">
+        {!integrations.smartImportEnabled ? (
+          <div className="inline-alert">
+            AI-enhanced smart import is optional and currently disabled. Manual ingest and the built-in caption blueprint remain available until <code>OPENAI_API_KEY</code> is set.
+          </div>
+        ) : null}
         <form action={ingestMediaAction} className="stack-form">
           <div className="form-grid">
             <label><span>Media file</span><input name="media" type="file" accept="video/*,image/*" required /></label>
