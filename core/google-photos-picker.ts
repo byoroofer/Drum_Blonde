@@ -1,4 +1,4 @@
-import { env, getIntegrationAvailability } from "@/core/env";
+import { env } from "@/core/env";
 import { getStoredGooglePhotosCredentials } from "@/core/google-photos-auth";
 import {
   GOOGLE_TOKEN_ENDPOINT,
@@ -41,7 +41,6 @@ export interface GooglePhotosPickerConnectionStatus {
   actionHref: string | null;
   actionLabel: string | null;
   requiredScope: string;
-  tone: "good" | "warn" | "bad";
 }
 
 interface GoogleTokenResponse {
@@ -139,7 +138,7 @@ async function fetchWithTimeout(url: string, init: RequestInit) {
 
 async function resolvePickerCredentials(): Promise<ResolvedGooglePhotosCredentials> {
   if (!env.googleClientId || !env.googleClientSecret) {
-    throw new Error("Google Photos import is unavailable until the Google OAuth client env vars are configured.");
+    throw new Error("Google Photos Picker is not configured. Add GOOGLE_CLIENT_ID/SECRET or GOOGLE_OAUTH_CLIENT_ID/SECRET.");
   }
 
   const stored = await getStoredGooglePhotosCredentials();
@@ -163,13 +162,13 @@ async function resolvePickerCredentials(): Promise<ResolvedGooglePhotosCredentia
     };
   }
 
-  throw new Error("Google Photos import is optional and currently not connected. Connect Google Photos in this admin session or provide GOOGLE_PHOTOS_REFRESH_TOKEN / GOOGLE_PHOTOS_ACCESS_TOKEN.");
+  throw new Error("Google Photos Picker is not connected. Connect Google Photos and approve the Picker scope.");
 }
 
 async function refreshGooglePhotosAccessToken(credentials: ResolvedGooglePhotosCredentials) {
   if (!credentials.refreshToken) {
     if (!credentials.accessToken) {
-      throw new Error("Google Photos import is optional and currently not connected. Connect Google Photos in this admin session or provide GOOGLE_PHOTOS_REFRESH_TOKEN / GOOGLE_PHOTOS_ACCESS_TOKEN.");
+      throw new Error("Google Photos Picker is not connected. Connect Google Photos and approve the Picker scope.");
     }
 
     if (credentials.scope && !hasPickerScope(credentials.scope)) {
@@ -244,7 +243,6 @@ export async function getGooglePhotosPickerAccessToken(forceRefresh = false) {
 }
 
 export async function getGooglePhotosPickerConnectionStatus(): Promise<GooglePhotosPickerConnectionStatus> {
-  const integrations = getIntegrationAvailability();
   const missing: string[] = [];
 
   if (!env.googleClientId) {
@@ -261,11 +259,10 @@ export async function getGooglePhotosPickerConnectionStatus(): Promise<GooglePho
       connected: false,
       missing,
       source: null,
-      detail: "Google Photos import is optional and currently unavailable until the Google OAuth client env vars are configured.",
+      detail: "Add the Google OAuth client credentials first.",
       actionHref: null,
       actionLabel: null,
-      requiredScope: PICKER_SCOPE,
-      tone: "warn"
+      requiredScope: PICKER_SCOPE
     };
   }
 
@@ -283,25 +280,19 @@ export async function getGooglePhotosPickerConnectionStatus(): Promise<GooglePho
         : "Connected from environment variables. The picker will refresh access tokens automatically.",
       actionHref: "/api/google-photos/oauth/start",
       actionLabel: credentials.source === "cookie" ? "Reconnect Google Photos" : "Connect Google Photos",
-      requiredScope: PICKER_SCOPE,
-      tone: "good"
+      requiredScope: PICKER_SCOPE
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Google Photos Picker is not connected.";
-    const missingCredentials = !integrations.googlePhotosCredentialsConfigured;
-
     return {
       ready: false,
       connected: false,
-      missing: missingCredentials ? ["GOOGLE_PHOTOS_REFRESH_TOKEN or GOOGLE_PHOTOS_ACCESS_TOKEN"] : [],
+      missing: [],
       source: null,
-      detail: missingCredentials
-        ? "Google Photos import is optional and currently not connected. Connect Google Photos in this admin session or provide GOOGLE_PHOTOS_REFRESH_TOKEN / GOOGLE_PHOTOS_ACCESS_TOKEN."
-        : message,
+      detail: message,
       actionHref: "/api/google-photos/oauth/start",
       actionLabel: "Connect Google Photos",
-      requiredScope: PICKER_SCOPE,
-      tone: "warn"
+      requiredScope: PICKER_SCOPE
     };
   }
 }

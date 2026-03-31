@@ -25,8 +25,7 @@ export default function GooglePhotosPickerPanel({
   actionHref,
   actionLabel,
   connected,
-  source,
-  tone
+  source
 }: {
   pickerReady: boolean;
   missingEnv: string[];
@@ -36,7 +35,6 @@ export default function GooglePhotosPickerPanel({
   actionLabel: string | null;
   connected: boolean;
   source: "cookie" | "env" | null;
-  tone: "good" | "warn" | "bad";
 }) {
   const [maxItemCount, setMaxItemCount] = useState("12");
   const [titlePrefix, setTitlePrefix] = useState("");
@@ -220,12 +218,11 @@ export default function GooglePhotosPickerPanel({
   return (
     <SectionCard title="Google Photos picker import" meta="Supported Google flow: choose items in Google Photos, then import them into Supabase storage.">
       {!pickerReady ? (
-        <div className={`inline-alert${tone === "bad" ? " inline-alert--error" : ""} picker-status-card`}>
-          <strong>Google Photos import is optional and currently unavailable.</strong>
+        <div className="inline-alert inline-alert--error picker-status-card">
+          <strong>Google Photos needs a compliant reconnect.</strong>
           <p>{connectionDetail}</p>
           {missingEnv.length ? <p>Missing Google setup: {missingEnv.join(", ")}.</p> : null}
           <p>Required scope: <code>{requiredScope}</code>.</p>
-          <p>Manual upload below remains available.</p>
           {actionHref && actionLabel ? <a className="primary-button" href={actionHref}>{actionLabel}</a> : null}
         </div>
       ) : (
