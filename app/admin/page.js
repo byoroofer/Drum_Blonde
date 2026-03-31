@@ -1,8 +1,7 @@
 import { logoutAction, ingestMediaAction, queueAssetAction, reviewAssetAction, runJobsAction } from "@/app/admin/actions";
 import GooglePhotosPickerPanel from "@/components/google-photos-picker-panel";
 import { EmptyState, MetricCard, PageHeader, SectionCard, StatusPill } from "@/components/ui";
-import { getEnvironmentChecklist } from "@/core/env";
-import { getGooglePhotosPickerConnectionStatus } from "@/core/google-photos-picker";
+import { getEnvironmentChecklist, getGooglePhotosPickerStatus } from "@/core/env";
 import { getDestinationPlatforms } from "@/core/platforms";
 import { getDashboardSnapshot } from "@/core/repository";
 import { requireDashboardUser } from "@/core/auth";
@@ -23,36 +22,13 @@ function renderNotice(notice, error) {
     queued: "Publishing targets queued.",
     "worker-ran": "Worker run completed.",
     demo: "Demo mode action completed without persistence.",
-    "duplicate-warning": "Asset uploaded, but a duplicate match was found.",
-    "google-linked": "Google Photos was connected with the current Picker scope.",
-    "google-disconnected": "Google Photos was disconnected from this admin browser."
+    "duplicate-warning": "Asset uploaded, but a duplicate match was found."
   };
   return <div className="inline-alert">{labels[notice] || notice}</div>;
 }
 
 function countBy(items, predicate) {
   return items.filter(predicate).length;
-}
-
-function getPhotoRailItems(snapshot) {
-  const base = snapshot.assets
-    .map((asset) => ({
-      id: asset.id,
-      src: asset.thumbnailUrl || (asset.mimeType.startsWith("image/") ? asset.publicUrl : null),
-      alt: asset.title
-    }))
-    .filter((item) => item.src);
-
-  if (!base.length) {
-    return [];
-  }
-
-  const expanded = [];
-  while (expanded.length < 10) {
-    expanded.push(...base);
-  }
-
-  return expanded.slice(0, 10);
 }
 
 function DashboardTab({ snapshot }) {
@@ -99,22 +75,13 @@ function DashboardTab({ snapshot }) {
   );
 }
 
-async function LibraryTab({ snapshot }) {
+function LibraryTab({ snapshot }) {
   const destinations = getDestinationPlatforms();
-  const googlePhotosPicker = await getGooglePhotosPickerConnectionStatus();
+  const googlePhotosPicker = getGooglePhotosPickerStatus();
 
   return (
     <div className="content-grid">
-      <GooglePhotosPickerPanel
-        pickerReady={googlePhotosPicker.ready}
-        missingEnv={googlePhotosPicker.missing}
-        connectionDetail={googlePhotosPicker.detail}
-        requiredScope={googlePhotosPicker.requiredScope}
-        actionHref={googlePhotosPicker.actionHref}
-        actionLabel={googlePhotosPicker.actionLabel}
-        connected={googlePhotosPicker.connected}
-        source={googlePhotosPicker.source}
-      />
+      <GooglePhotosPickerPanel pickerReady={googlePhotosPicker.ready} missingEnv={googlePhotosPicker.missing} />
       <SectionCard title="Ingest media" meta="Upload once, fingerprint once, caption once, distribute safely.">
         <form action={ingestMediaAction} className="stack-form">
           <div className="form-grid">
@@ -318,35 +285,25 @@ export default async function AdminPage({ searchParams }) {
   const notice = String(params?.notice || "").trim();
   const error = String(params?.error || "").trim();
   const snapshot = await getDashboardSnapshot(user);
-  const photoRailItems = getPhotoRailItems(snapshot);
-  const leftRailItems = photoRailItems.filter((_, index) => index % 2 === 0);
-  const rightRailItems = photoRailItems.filter((_, index) => index % 2 === 1);
 
   let content = <DashboardTab snapshot={snapshot} />;
-  if (tab === "library") content = await LibraryTab({ snapshot });
+  if (tab === "library") content = <LibraryTab snapshot={snapshot} />;
   if (tab === "approvals") content = <ApprovalsTab snapshot={snapshot} />;
   if (tab === "schedule") content = <ScheduleTab snapshot={snapshot} />;
   if (tab === "logs") content = <LogsTab snapshot={snapshot} />;
   if (tab === "settings") content = <SettingsTab snapshot={snapshot} />;
 
   return (
-    <main className="dashboard-stage">
-      <aside className="photo-rail photo-rail--left" aria-hidden="true">
-        {leftRailItems.map((item, index) => <img key={`${item.id}-${index}`} className="photo-rail__tile" src={item.src} alt={item.alt} />)}
-      </aside>
-      <div className="page-stack page-stack--dashboard">
-        <PageHeader
-          eyebrow="Creator Distribution Control Center"
-          title="Ingest once, approve once, distribute safely."
-          description="This admin workspace keeps Brooke's drum and music content inside an auditable workflow with duplicate protection, prepared captions, and queue-first publishing."
-          actions={<form action={logoutAction}><button className="ghost-button" type="submit">Sign out</button></form>}
-        />
-        {renderNotice(notice, error)}
-        {content}
-      </div>
-      <aside className="photo-rail photo-rail--right" aria-hidden="true">
-        {rightRailItems.map((item, index) => <img key={`${item.id}-${index}`} className="photo-rail__tile" src={item.src} alt={item.alt} />)}
-      </aside>
+    <main className="page-stack">
+      <PageHeader
+        eyebrow="Creator Distribution Control Center"
+        title="Ingest once, approve once, distribute safely."
+        description="This admin workspace keeps Brooke's drum and music content inside an auditable workflow with duplicate protection, prepared captions, and queue-first publishing."
+        actions={<form action={logoutAction}><button className="ghost-button" type="submit">Sign out</button></form>}
+      />
+      {renderNotice(notice, error)}
+      {content}
     </main>
   );
 }
+

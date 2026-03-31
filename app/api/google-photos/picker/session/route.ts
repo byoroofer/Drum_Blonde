@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/core/auth";
-import { createGooglePhotosPickingSession, getGooglePhotosPickerConnectionStatus } from "@/core/google-photos-picker";
+import { getGooglePhotosPickerStatus } from "@/core/env";
+import { createGooglePhotosPickingSession } from "@/core/google-photos-picker";
 
 export const runtime = "nodejs";
 
@@ -10,15 +11,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const status = await getGooglePhotosPickerConnectionStatus();
+  const status = getGooglePhotosPickerStatus();
   if (!status.ready) {
     return NextResponse.json(
       {
-        error: status.detail,
+        error: "Google Photos Picker is not configured.",
         missing: status.missing,
-        requiredScope: status.requiredScope,
-        actionHref: status.actionHref,
-        actionLabel: status.actionLabel
+        requiredScope: "https://www.googleapis.com/auth/photospicker.mediaitems.readonly"
       },
       { status: 503 }
     );

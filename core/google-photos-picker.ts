@@ -1,15 +1,12 @@
 import { env } from "@/core/env";
-import { getStoredGooglePhotosCredentials } from "@/core/google-photos-auth";
-import {
-  GOOGLE_TOKEN_ENDPOINT,
-  PICKER_API_BASE,
-  PICKER_SCOPE,
-  REQUEST_TIMEOUT_MS
-} from "@/core/google-photos-constants";
+
+const PICKER_API_BASE = "https://photospicker.googleapis.com/v1";
+const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
+const PICKER_SCOPE = "https://www.googleapis.com/auth/photospicker.mediaitems.readonly";
+const REQUEST_TIMEOUT_MS = 30_000;
 
 let cachedAccessToken: string | null = null;
 let cachedAccessTokenExpiresAt = 0;
-let cachedAccessTokenKey = "";
 
 export interface GooglePhotosPickerSession {
   id: string;
@@ -32,32 +29,9 @@ export interface GooglePhotosPickedItem {
   videoProcessingStatus: string | null;
 }
 
-export interface GooglePhotosPickerConnectionStatus {
-  ready: boolean;
-  connected: boolean;
-  missing: string[];
-  source: "cookie" | "env" | null;
-  detail: string;
-  actionHref: string | null;
-  actionLabel: string | null;
-  requiredScope: string;
-}
-
 interface GoogleTokenResponse {
   access_token?: string;
   expires_in?: number;
-  scope?: string;
-  refresh_token?: string;
-  error?: string;
-  error_description?: string;
-}
-
-interface ResolvedGooglePhotosCredentials {
-  source: "cookie" | "env" | null;
-  refreshToken: string;
-  accessToken: string;
-  accessTokenExpiresAt: number;
-  scope: string;
 }
 
 interface RawSessionResponse {
@@ -107,23 +81,21 @@ function parseDurationMs(value: string | undefined, fallbackMs: number) {
   return Math.max(0, Math.round(seconds * 1000));
 }
 
-function hasPickerScope(scope: string) {
-  return String(scope || "")
-    .split(/\s+/)
-    .filter(Boolean)
-    .includes(PICKER_SCOPE);
+function requirePickerConfig() {
+  if (!env.googleClientId || !env.googleClientSecret) {
+    throw new Error("Google Photos Picker is not configured. Add GOOGLE_CLIENT_ID/SECRET or GOOGLE_OAUTH_CLIENT_ID/SECRET.");
+  }
+
+  if (!env.googlePhotosRefreshToken && !env.googlePhotosAccessToken) {
+    throw new Error("Google Photos Picker is not configured. Add GOOGLE_PHOTOS_REFRESH_TOKEN or GOOGLE_PHOTOS_ACCESS_TOKEN.");
+  }
 }
 
 function buildScopeError(errorText: string) {
-  const normalized = errorText.toLowerCase();
-  if (normalized.includes("insufficient authentication scopes") || normalized.includes("photospicker.mediaitems.readonly") || normalized.includes("photoslibrary.readonly")) {
+  if (errorText.toLowerCase().includes("insufficient authentication scopes")) {
     return new Error(
-      "Google Photos Picker requires the photospicker.mediaitems.readonly scope. Reconnect Google Photos from the admin and approve the current Picker flow."
+      "Google Photos Picker token is missing the photospicker.mediaitems.readonly scope. Generate a new token with https://www.googleapis.com/auth/photospicker.mediaitems.readonly and update GOOGLE_PHOTOS_REFRESH_TOKEN."
     );
-  }
-
-  if (normalized.includes("invalid_grant")) {
-    return new Error("Google Photos access expired or was revoked. Reconnect Google Photos from the admin and approve offline access again.");
   }
 
   return new Error(errorText);
@@ -136,56 +108,25 @@ async function fetchWithTimeout(url: string, init: RequestInit) {
   });
 }
 
-async function resolvePickerCredentials(): Promise<ResolvedGooglePhotosCredentials> {
-  if (!env.googleClientId || !env.googleClientSecret) {
-    throw new Error("Google Photos Picker is not configured. Add GOOGLE_CLIENT_ID/SECRET or GOOGLE_OAUTH_CLIENT_ID/SECRET.");
+export async function getGooglePhotosPickerAccessToken(forceRefresh = false) {
+  requirePickerConfig();
+
+  if (!forceRefresh && env.googlePhotosAccessToken) {
+    return env.googlePhotosAccessToken;
   }
 
-  const stored = await getStoredGooglePhotosCredentials();
-  if (stored?.refreshToken || stored?.accessToken) {
-    return {
-      source: "cookie",
-      refreshToken: String(stored.refreshToken || ""),
-      accessToken: String(stored.accessToken || ""),
-      accessTokenExpiresAt: Number(stored.accessTokenExpiresAt || 0),
-      scope: String(stored.scope || "")
-    };
+  if (!forceRefresh && cachedAccessToken && Date.now() < cachedAccessTokenExpiresAt) {
+    return cachedAccessToken;
   }
 
-  if (env.googlePhotosRefreshToken || env.googlePhotosAccessToken) {
-    return {
-      source: "env",
-      refreshToken: env.googlePhotosRefreshToken,
-      accessToken: env.googlePhotosAccessToken,
-      accessTokenExpiresAt: 0,
-      scope: ""
-    };
-  }
-
-  throw new Error("Google Photos Picker is not connected. Connect Google Photos and approve the Picker scope.");
-}
-
-async function refreshGooglePhotosAccessToken(credentials: ResolvedGooglePhotosCredentials) {
-  if (!credentials.refreshToken) {
-    if (!credentials.accessToken) {
-      throw new Error("Google Photos Picker is not connected. Connect Google Photos and approve the Picker scope.");
-    }
-
-    if (credentials.scope && !hasPickerScope(credentials.scope)) {
-      throw buildScopeError(`Stored access token scope is ${credentials.scope}.`);
-    }
-
-    return {
-      accessToken: credentials.accessToken,
-      expiresAt: Date.now() + 5 * 60 * 1000,
-      scope: credentials.scope
-    };
+  if (!env.googlePhotosRefreshToken) {
+    throw new Error("GOOGLE_PHOTOS_REFRESH_TOKEN is missing. Generate a token with the Google Photos Picker scope.");
   }
 
   const body = new URLSearchParams({
     client_id: env.googleClientId,
     client_secret: env.googleClientSecret,
-    refresh_token: credentials.refreshToken,
+    refresh_token: env.googlePhotosRefreshToken,
     grant_type: "refresh_token"
   });
 
@@ -207,94 +148,9 @@ async function refreshGooglePhotosAccessToken(credentials: ResolvedGooglePhotosC
     throw new Error("Google OAuth token refresh succeeded but did not return an access token.");
   }
 
-  const scope = String(payload.scope || credentials.scope || "").trim();
-  if (scope && !hasPickerScope(scope)) {
-    throw buildScopeError(`Google OAuth token refresh returned scope ${scope}.`);
-  }
-
-  return {
-    accessToken: payload.access_token,
-    expiresAt: Date.now() + Math.max(Number(payload.expires_in || 3600) - 60, 60) * 1000,
-    scope
-  };
-}
-
-export async function getGooglePhotosPickerAccessToken(forceRefresh = false) {
-  const credentials = await resolvePickerCredentials();
-  const cacheKey = `${credentials.source}:${credentials.refreshToken || credentials.accessToken}`;
-
-  if (!forceRefresh && cachedAccessToken && cacheKey === cachedAccessTokenKey && Date.now() < cachedAccessTokenExpiresAt) {
-    return cachedAccessToken;
-  }
-
-  if (!forceRefresh && !credentials.refreshToken && credentials.accessToken) {
-    const direct = await refreshGooglePhotosAccessToken(credentials);
-    cachedAccessTokenKey = cacheKey;
-    cachedAccessToken = direct.accessToken;
-    cachedAccessTokenExpiresAt = direct.expiresAt;
-    return cachedAccessToken;
-  }
-
-  const refreshed = await refreshGooglePhotosAccessToken(credentials);
-  cachedAccessTokenKey = cacheKey;
-  cachedAccessToken = refreshed.accessToken;
-  cachedAccessTokenExpiresAt = refreshed.expiresAt;
+  cachedAccessToken = payload.access_token;
+  cachedAccessTokenExpiresAt = Date.now() + Math.max(Number(payload.expires_in || 3600) - 60, 60) * 1000;
   return cachedAccessToken;
-}
-
-export async function getGooglePhotosPickerConnectionStatus(): Promise<GooglePhotosPickerConnectionStatus> {
-  const missing: string[] = [];
-
-  if (!env.googleClientId) {
-    missing.push("GOOGLE_CLIENT_ID or GOOGLE_OAUTH_CLIENT_ID");
-  }
-
-  if (!env.googleClientSecret) {
-    missing.push("GOOGLE_CLIENT_SECRET or GOOGLE_OAUTH_CLIENT_SECRET");
-  }
-
-  if (missing.length) {
-    return {
-      ready: false,
-      connected: false,
-      missing,
-      source: null,
-      detail: "Add the Google OAuth client credentials first.",
-      actionHref: null,
-      actionLabel: null,
-      requiredScope: PICKER_SCOPE
-    };
-  }
-
-  try {
-    const credentials = await resolvePickerCredentials();
-    await getGooglePhotosPickerAccessToken();
-
-    return {
-      ready: true,
-      connected: true,
-      missing: [],
-      source: credentials.source,
-      detail: credentials.source === "cookie"
-        ? "Connected through Google OAuth in this admin browser. The picker will refresh access tokens automatically."
-        : "Connected from environment variables. The picker will refresh access tokens automatically.",
-      actionHref: "/api/google-photos/oauth/start",
-      actionLabel: credentials.source === "cookie" ? "Reconnect Google Photos" : "Connect Google Photos",
-      requiredScope: PICKER_SCOPE
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Google Photos Picker is not connected.";
-    return {
-      ready: false,
-      connected: false,
-      missing: [],
-      source: null,
-      detail: message,
-      actionHref: "/api/google-photos/oauth/start",
-      actionLabel: "Connect Google Photos",
-      requiredScope: PICKER_SCOPE
-    };
-  }
 }
 
 async function pickerRequest<T>(pathname: string, init: RequestInit = {}, retry = true): Promise<T> {
@@ -309,10 +165,9 @@ async function pickerRequest<T>(pathname: string, init: RequestInit = {}, retry 
   });
 
   const text = await response.text();
-  if (response.status === 401 && retry) {
+  if (response.status === 401 && retry && env.googlePhotosRefreshToken) {
     cachedAccessToken = null;
     cachedAccessTokenExpiresAt = 0;
-    cachedAccessTokenKey = "";
     return pickerRequest<T>(pathname, init, false);
   }
 
