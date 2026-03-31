@@ -1,5 +1,4 @@
 import crypto from "node:crypto";
-import { buildCaptionVariants } from "@/core/caption-engine";
 import { buildDemoDashboardSnapshot } from "@/core/demo-data";
 import { env, hasSupabaseEnv, isDemoMode } from "@/core/env";
 import { getPlatformPolicyList } from "@/core/platforms";
@@ -20,6 +19,7 @@ import type {
 } from "@/core/types";
 import { inspectUploadedVideo } from "@/core/video";
 import { downloadPickedMediaItem, listGooglePhotosPickedItems } from "@/core/google-photos-picker";
+import { buildCaptionBlueprint, generateWorkflowBundle } from "@/core/openai-workflows";
 
 const MANUAL_INSTRUCTIONS: Record<Platform, string> = {
   tiktok: "Post through TikTok's approved creator workflow with the prepared caption package.",
@@ -417,10 +417,28 @@ export async function ingestMedia(input: IngestInput): Promise<RepositoryActionR
   const tagRows = await ensureTags(admin, input.tags);
   await linkTags(admin, insertedAsset.data.id, tagRows.map((row) => row.id));
 
-  const captionBlueprint = buildCaptionVariants(
-    { title: input.title || input.file.name, description: input.description, tags: input.tags, voicePreset: input.voicePreset },
-    input.destinations
-  );
+  let aiWorkflow: Awaited<ReturnType<typeof generateWorkflowBundle>> | null = null;
+  try {
+    aiWorkflow = await generateWorkflowBundle({
+      title: input.title || input.file.name,
+      description: input.description,
+      tags: input.tags,
+      voicePreset: input.voicePreset,
+      platforms: input.destinations
+    });
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+  }
+
+  const captionBlueprint = aiWorkflow?.captions.length
+    ? aiWorkflow.captions
+    : buildCaptionBlueprint({
+        title: input.title || input.file.name,
+        description: input.description,
+        tags: input.tags,
+        voicePreset: input.voicePreset,
+        platforms: input.destinations
+      });
 
   const captionInsert = await admin
     .from("captions")
@@ -521,8 +539,18 @@ export async function ingestMedia(input: IngestInput): Promise<RepositoryActionR
 
   await createAuditLog(input.actor, "asset_ingested", "media_assets", insertedAsset.data.id, duplicateMatch.data?.id ? "warning" : "info", `Ingested ${insertedAsset.data.title}.`, {
     destinations: input.destinations,
-    duplicateMatchedAssetId: duplicateMatch.data?.id ?? null
+    duplicateMatchedAssetId: duplicateMatch.data?.id ?? null,
+    openAiUsed: Boolean(aiWorkflow?.captions.length)
   });
+
+  if (aiWorkflow?.captions.length) {
+    await createAuditLog(input.actor, "workflow_ai_generated", "media_assets", insertedAsset.data.id, "info", `OpenAI prepared workflow variants for ${insertedAsset.data.title}.`, {
+      model: aiWorkflow.model,
+      summary: aiWorkflow.summary,
+      reviewNotes: aiWorkflow.reviewNotes,
+      platforms: input.destinations
+    });
+  }
 
   return { ok: true, message: "Media ingested successfully.", notice: duplicateMatch.data?.id ? "duplicate-warning" : "uploaded" };
 }

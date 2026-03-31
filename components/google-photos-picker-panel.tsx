@@ -19,10 +19,22 @@ function formatType(item: GooglePhotosPickedItemSummary) {
 
 export default function GooglePhotosPickerPanel({
   pickerReady,
-  missingEnv
+  missingEnv,
+  connectionDetail,
+  requiredScope,
+  actionHref,
+  actionLabel,
+  connected,
+  source
 }: {
   pickerReady: boolean;
   missingEnv: string[];
+  connectionDetail: string;
+  requiredScope: string;
+  actionHref: string | null;
+  actionLabel: string | null;
+  connected: boolean;
+  source: "cookie" | "env" | null;
 }) {
   const [maxItemCount, setMaxItemCount] = useState("12");
   const [titlePrefix, setTitlePrefix] = useState("");
@@ -65,6 +77,22 @@ export default function GooglePhotosPickerPanel({
     setSelectedIds((current) =>
       current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id]
     );
+  }
+
+  async function disconnectGooglePhotos() {
+    setIsWorking(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/google-photos/oauth/disconnect", { method: "POST" });
+      if (!response.ok) {
+        throw new Error("Unable to disconnect Google Photos.");
+      }
+      window.location.assign("/admin?tab=library&notice=google-disconnected");
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : "Unable to disconnect Google Photos.");
+      setIsWorking(false);
+    }
   }
 
   async function startPicker() {
@@ -190,10 +218,25 @@ export default function GooglePhotosPickerPanel({
   return (
     <SectionCard title="Google Photos picker import" meta="Supported Google flow: choose items in Google Photos, then import them into Supabase storage.">
       {!pickerReady ? (
-        <div className="inline-alert inline-alert--error">
-          Missing Google Photos Picker env: {missingEnv.join(", ")}. Mint the token with <code>https://www.googleapis.com/auth/photospicker.mediaitems.readonly</code>.
+        <div className="inline-alert inline-alert--error picker-status-card">
+          <strong>Google Photos needs a compliant reconnect.</strong>
+          <p>{connectionDetail}</p>
+          {missingEnv.length ? <p>Missing Google setup: {missingEnv.join(", ")}.</p> : null}
+          <p>Required scope: <code>{requiredScope}</code>.</p>
+          {actionHref && actionLabel ? <a className="primary-button" href={actionHref}>{actionLabel}</a> : null}
         </div>
-      ) : null}
+      ) : (
+        <div className="inline-alert picker-status-card">
+          <div>
+            <strong>Google Photos is connected.</strong>
+            <p>{connectionDetail}</p>
+          </div>
+          <div className="inline-actions">
+            {actionHref && actionLabel ? <a className="ghost-button" href={actionHref}>{actionLabel}</a> : null}
+            {connected && source === "cookie" ? <button type="button" className="ghost-button" onClick={() => void disconnectGooglePhotos()} disabled={isWorking}>Disconnect</button> : null}
+          </div>
+        </div>
+      )}
 
       <div className="stack-form">
         <div className="inline-alert">

@@ -1,4 +1,4 @@
-﻿import { readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 const root = path.resolve(process.cwd());
@@ -25,25 +25,33 @@ async function main() {
     "NEXT_PUBLIC_SUPABASE_URL",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
-    "SUPABASE_STORAGE_BUCKET",
     "DATABASE_URL",
     "TOKEN_ENCRYPTION_KEY",
     "WORKER_SHARED_SECRET"
   ];
 
   const missing = required.filter((name) => !String(env[name] || "").trim());
+  if (!String(env.SUPABASE_STORAGE_BUCKET || env.SUPABASE_MEDIA_BUCKET || "").trim()) {
+    missing.push("SUPABASE_STORAGE_BUCKET or SUPABASE_MEDIA_BUCKET");
+  }
+
   if (missing.length) {
     console.error(`Missing required env vars: ${missing.join(", ")}`);
     process.exit(1);
   }
 
-  const googlePhotosOptional = ["GOOGLE_CLIENT_ID or GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_CLIENT_SECRET or GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_PHOTOS_REFRESH_TOKEN or GOOGLE_PHOTOS_ACCESS_TOKEN"];
+  const googlePhotosOptional = [
+    "GOOGLE_CLIENT_ID or GOOGLE_OAUTH_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET or GOOGLE_OAUTH_CLIENT_SECRET",
+    "GOOGLE_PHOTOS_REFRESH_TOKEN or GOOGLE_PHOTOS_ACCESS_TOKEN"
+  ];
+
   console.log("Environment looks ready for Brooke's distribution dashboard.");
   console.log(`Optional Google Photos Picker envs: ${googlePhotosOptional.join(", ")}`);
+  console.log(`Optional OpenAI envs: ${["OPENAI_API_KEY", "OPENAI_MODEL"].join(", ")}`);
 }
 
 main().catch((error) => {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 });
-
