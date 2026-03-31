@@ -1,5 +1,4 @@
 import { logoutAction, ingestMediaAction, queueAssetAction, reviewAssetAction, runJobsAction } from "@/app/admin/actions";
-import { AdminShell } from "@/components/admin-shell";
 import GooglePhotosPickerPanel from "@/components/google-photos-picker-panel";
 import { EmptyState, MetricCard, PageHeader, SectionCard, StatusPill } from "@/components/ui";
 import { getEnvironmentChecklist, getGooglePhotosPickerStatus } from "@/core/env";
@@ -295,17 +294,16 @@ export default async function AdminPage({ searchParams }) {
   if (tab === "settings") content = <SettingsTab snapshot={snapshot} />;
 
   return (
-    <AdminShell user={user}>
-      <main className="page-stack">
-        <PageHeader
-          eyebrow="Creator Distribution Control Center"
-          title="Ingest once, approve once, distribute safely."
-          description="This admin workspace keeps Brooke's drum and music content inside an auditable workflow with duplicate protection, prepared captions, and queue-first publishing."
-          actions={<form action={logoutAction}><button className="ghost-button" type="submit">Sign out</button></form>}
-        />
-        {renderNotice(notice, error)}
-        {content}
-      </main>
-    </AdminShell>
+    <main className="page-stack">
+      <PageHeader
+        eyebrow="Creator Distribution Control Center"
+        title="Ingest once, approve once, distribute safely."
+        description="This admin workspace keeps Brooke's drum and music content inside an auditable workflow with duplicate protection, prepared captions, and queue-first publishing."
+        actions={<form action={logoutAction}><button className="ghost-button" type="submit">Sign out</button></form>}
+      />
+      {renderNotice(notice, error)}
+      {content}
+    </main>
   );
 }
+

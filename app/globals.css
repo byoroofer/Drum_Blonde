@@ -59,17 +59,11 @@ button { cursor: pointer; }
 .danger-button { background: rgba(255, 107, 127, 0.14); color: #ffd9e0; border-color: rgba(255, 107, 127, 0.4); }
 
 .landing-shell,
+.page-stack,
 .login-shell {
   width: min(1200px, calc(100vw - 2rem));
   margin: 0 auto;
   padding: 2rem 0 3rem;
-}
-
-.page-stack {
-  width: 100%;
-  max-width: 100%;
-  margin: 0;
-  padding: 0;
 }
 
 .hero-panel,
@@ -183,11 +177,9 @@ button { cursor: pointer; }
 .rail-nav { display: grid; gap: 0.45rem; }
 .rail-link { padding: 0.85rem 1rem; border-radius: 16px; color: var(--muted); }
 .rail-link--active, .rail-link:hover { background: rgba(255, 255, 255, 0.05); color: var(--text); }
-.dashboard-main { padding: 1.6rem; min-width: 0; }
-.dashboard-main > .page-stack { width: 100%; margin: 0; padding: 0; }
+.dashboard-main { padding: 1.6rem; }
 .page-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; align-items: flex-end; }
-.page-header > div { flex: 1 1 24rem; min-width: 0; }
-.inline-alert { margin-top: 1rem; padding: 0.95rem 1rem; border-radius: 16px; border: 1px solid rgba(247, 183, 77, 0.35); background: rgba(247, 183, 77, 0.12); overflow-wrap: anywhere; }
+.inline-alert { margin-top: 1rem; padding: 0.95rem 1rem; border-radius: 16px; border: 1px solid rgba(247, 183, 77, 0.35); background: rgba(247, 183, 77, 0.12); }
 .inline-alert--error { border-color: rgba(255, 107, 127, 0.35); background: rgba(255, 107, 127, 0.1); }
 .section-card__head h2, .panel-head h2 { margin: 0; font-size: 1.25rem; }
 .section-card__head p, .panel-head p { margin: 0.3rem 0 0; }
@@ -210,7 +202,7 @@ button { cursor: pointer; }
   .dashboard-shell { grid-template-columns: 1fr; }
   .dashboard-rail { position: static; min-height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
   .dashboard-main { padding: 1rem; }
-  .landing-shell, .login-shell { width: min(100vw - 1rem, 1200px); }
+  .landing-shell, .page-stack, .login-shell { width: min(100vw - 1rem, 1200px); }
 }
 
 .picker-summary {
@@ -245,4 +237,3 @@ button { cursor: pointer; }
   margin: 0.3rem 0 0;
   color: var(--muted);
 }
-
