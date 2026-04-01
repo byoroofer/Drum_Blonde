@@ -29,7 +29,6 @@ export const env = {
   googleClientSecret: readEnv("GOOGLE_CLIENT_SECRET") || readEnv("GOOGLE_OAUTH_CLIENT_SECRET"),
   googlePhotosAccessToken: readEnv("GOOGLE_PHOTOS_ACCESS_TOKEN"),
   googlePhotosRefreshToken: readEnv("GOOGLE_PHOTOS_REFRESH_TOKEN"),
-  openAiApiKey: readEnv("OPENAI_API_KEY"),
   tiktokClientKey: readEnv("TIKTOK_CLIENT_KEY"),
   tiktokClientSecret: readEnv("TIKTOK_CLIENT_SECRET"),
   xClientId: readEnv("X_CLIENT_ID"),
@@ -62,7 +61,7 @@ export function getGooglePhotosPickerStatus() {
   }
 
   if (!env.googlePhotosRefreshToken && !env.googlePhotosAccessToken) {
-    missing.push("GOOGLE_PHOTOS_ACCESS_TOKEN or GOOGLE_PHOTOS_REFRESH_TOKEN");
+    missing.push("GOOGLE_PHOTOS_REFRESH_TOKEN or GOOGLE_PHOTOS_ACCESS_TOKEN");
   }
 
   return {
@@ -87,8 +86,7 @@ export function getEnvironmentChecklist() {
     { name: "META_APP_SECRET", configured: Boolean(env.metaAppSecret), required: false, purpose: "Future Instagram/Facebook token exchange." },
     { name: "GOOGLE_CLIENT_ID or GOOGLE_OAUTH_CLIENT_ID", configured: Boolean(env.googleClientId), required: false, purpose: "Google OAuth client for YouTube and Google Photos Picker." },
     { name: "GOOGLE_CLIENT_SECRET or GOOGLE_OAUTH_CLIENT_SECRET", configured: Boolean(env.googleClientSecret), required: false, purpose: "Google OAuth client secret for YouTube and Google Photos Picker." },
-    { name: "GOOGLE_PHOTOS_ACCESS_TOKEN or GOOGLE_PHOTOS_REFRESH_TOKEN", configured: Boolean(env.googlePhotosRefreshToken || env.googlePhotosAccessToken), required: false, purpose: "Google Photos Picker import. Must be minted with photospicker.mediaitems.readonly." },
-    { name: "OPENAI_API_KEY", configured: Boolean(env.openAiApiKey), required: false, purpose: "Optional smart-import captioning and metadata enrichment." },
+    { name: "GOOGLE_PHOTOS_REFRESH_TOKEN or GOOGLE_PHOTOS_ACCESS_TOKEN", configured: Boolean(env.googlePhotosRefreshToken || env.googlePhotosAccessToken), required: false, purpose: "Google Photos Picker import. Must be minted with photospicker.mediaitems.readonly." },
     { name: "TIKTOK_CLIENT_KEY", configured: Boolean(env.tiktokClientKey), required: false, purpose: "Future TikTok Content Posting API OAuth." },
     { name: "TIKTOK_CLIENT_SECRET", configured: Boolean(env.tiktokClientSecret), required: false, purpose: "Future TikTok Content Posting API OAuth." },
     { name: "X_CLIENT_ID", configured: Boolean(env.xClientId), required: false, purpose: "Future X API OAuth." },
