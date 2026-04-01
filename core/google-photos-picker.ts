@@ -87,7 +87,7 @@ function requirePickerConfig() {
   }
 
   if (!env.googlePhotosRefreshToken && !env.googlePhotosAccessToken) {
-    throw new Error("Google Photos Picker is not configured. Add GOOGLE_PHOTOS_REFRESH_TOKEN or GOOGLE_PHOTOS_ACCESS_TOKEN.");
+    throw new Error("Google Photos Picker is not configured. Add GOOGLE_PHOTOS_ACCESS_TOKEN or GOOGLE_PHOTOS_REFRESH_TOKEN.");
   }
 }
 

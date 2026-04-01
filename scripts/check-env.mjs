@@ -37,9 +37,11 @@ async function main() {
     process.exit(1);
   }
 
-  const googlePhotosOptional = ["GOOGLE_CLIENT_ID or GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_CLIENT_SECRET or GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_PHOTOS_REFRESH_TOKEN or GOOGLE_PHOTOS_ACCESS_TOKEN"];
+  const googlePhotosOptional = ["GOOGLE_CLIENT_ID or GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_CLIENT_SECRET or GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_PHOTOS_ACCESS_TOKEN or GOOGLE_PHOTOS_REFRESH_TOKEN"];
+  const smartImportOptional = ["OPENAI_API_KEY"];
   console.log("Environment looks ready for Brooke's distribution dashboard.");
   console.log(`Optional Google Photos Picker envs: ${googlePhotosOptional.join(", ")}`);
+  console.log(`Optional smart-import envs: ${smartImportOptional.join(", ")}`);
 }
 
 main().catch((error) => {

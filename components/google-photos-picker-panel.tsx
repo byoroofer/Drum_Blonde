@@ -191,7 +191,7 @@ export default function GooglePhotosPickerPanel({
     <SectionCard title="Google Photos picker import" meta="Supported Google flow: choose items in Google Photos, then import them into Supabase storage.">
       {!pickerReady ? (
         <div className="inline-alert inline-alert--error">
-          Missing Google Photos Picker env: {missingEnv.join(", ")}. Mint the token with <code>https://www.googleapis.com/auth/photospicker.mediaitems.readonly</code>.
+          Missing Google Photos configuration: {missingEnv.join(", ")}. Optional smart-import envs: <code>OPENAI_API_KEY</code>. Mint the token with <code>https://www.googleapis.com/auth/photospicker.mediaitems.readonly</code>.
         </div>
       ) : null}
 
