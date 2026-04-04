@@ -512,22 +512,24 @@ svg {
     0 6px 24px rgba(0, 0, 0, 0.4);
 }
 
-/* Spotlight: full column width, height = natural 9/16 of that width, no body below */
+/* Spotlight: sized to TikTok's natural embed width, centered, glow box = embed frame */
 .video-card--spotlight {
   display: flex;
   flex-direction: column;
+  width: min(325px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+  min-height: unset;
 }
 
 .video-card--spotlight .video-card__player,
 .video-card--spotlight .smart-video--embed {
   aspect-ratio: 9 / 16;
   width: 100%;
-  max-width: 100%;
   height: auto;
   min-height: unset;
   overflow: hidden;
   background: #000;
-  flex: 1 1 auto;
 }
 
 .video-card--spotlight .video-card__player video,
