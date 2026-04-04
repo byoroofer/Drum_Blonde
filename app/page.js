@@ -397,7 +397,7 @@ export default async function HomePage() {
           {heroVideo || secondaryVideo ? (
             <aside className="hero__aside hero__aside--video-only">
               {heroVideo ? <VideoCard item={heroVideo} autoPlay className="video-card video-card--spotlight" /> : null}
-              {secondaryVideo ? <VideoCard item={secondaryVideo} className="video-card video-card--support" /> : null}
+              {secondaryVideo ? <VideoCard item={secondaryVideo} autoPlay className="video-card video-card--support" /> : null}
             </aside>
           ) : null}
         </div>
@@ -407,7 +407,7 @@ export default async function HomePage() {
             {reelVideos.map((item, index) => (
               <article key={`${item.id}-${index}`} className="reel-chip">
                 {item.embedUrl ? (
-                  <EmbeddedVideo item={item} className="reel-chip__video" />
+                  <EmbeddedVideo item={item} className="reel-chip__video" autoPlay={index < 2} />
                 ) : (
                   <TrackableVideo
                     className="reel-chip__video"
@@ -416,7 +416,12 @@ export default async function HomePage() {
                     poster={item.posterUrl || item.thumbnailUrl}
                     title={item.title}
                     mediaId={item.id}
+                    autoPlay={index < 2}
+                    loop={index < 2}
+                    muted={false}
                     controls
+                    eager={index < 2}
+                    showPlayButton={index >= 2}
                   />
                 )}
                 <div>
