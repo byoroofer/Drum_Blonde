@@ -529,11 +529,11 @@ svg {
   background: #000;
 }
 
-/* Extend height by ~80px to push TikTok bottom chrome out of the clipped area */
+/* Push TikTok bottom chrome (≈160px) and top bar (≈60px) outside overflow:hidden */
 .video-card--spotlight .smart-video--embed iframe {
   width: 100%;
-  height: calc(100% + 80px);
-  margin: 0;
+  height: calc(100% + 220px);
+  margin-top: -60px;
   border: 0;
 }
 
