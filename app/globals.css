@@ -512,13 +512,14 @@ svg {
     0 6px 24px rgba(0, 0, 0, 0.4);
 }
 
-/* Spotlight: full right-column width, glow box = embed frame, no clipping */
+/* Spotlight: full right-column width, glow box = embed frame */
 .video-card--spotlight {
   display: flex;
   flex-direction: column;
   width: 100%;
   min-height: unset;
-  overflow: visible;
+  align-self: flex-start;
+  overflow: hidden;
 }
 
 .video-card--spotlight .video-card__player,
@@ -527,7 +528,6 @@ svg {
   width: 100%;
   height: auto;
   min-height: unset;
-  overflow: visible;
   background: #000;
 }
 
