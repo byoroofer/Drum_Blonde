@@ -328,11 +328,11 @@ svg {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(380px, 1.05fr);
   gap: 26px;
-  align-items: stretch;
+  align-items: start;
 }
 
 .hero__grid--video-only {
-  align-items: stretch;
+  align-items: start;
 }
 
 .hero__grid--single-column {
