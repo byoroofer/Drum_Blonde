@@ -28,6 +28,7 @@ import { headers } from "next/headers";
 export const dynamic = "force-dynamic";
 
 const LIBRARY_VIEWS = new Set(["feed", "photos", "videos", "hidden"]);
+const LIBRARY_TILE_SIZES = new Set(["large", "medium", "small", "list", "details"]);
 const LIBRARY_SORTS = new Set([
   "date_desc",
   "date_asc",
@@ -374,6 +375,8 @@ export default async function AdminPage({ searchParams }) {
 
   const requestedView = String(params.view || "feed").toLowerCase();
   const view = LIBRARY_VIEWS.has(requestedView) ? requestedView : "feed";
+  const requestedTileSize = String(params.tileSize || "medium").toLowerCase();
+  const tileSize = LIBRARY_TILE_SIZES.has(requestedTileSize) ? requestedTileSize : "medium";
   const requestedAlbum = String(params.album || "all").trim().toLowerCase();
   const album = requestedAlbum === "all" || albums.some((entry) => entry.slug === requestedAlbum) ? requestedAlbum : "all";
 
@@ -384,7 +387,7 @@ export default async function AdminPage({ searchParams }) {
     ...(homepageMedia.home.backgroundVideos || [])
   ].filter((item, index, array) => item && array.findIndex((candidate) => candidate?.id === item.id) === index);
 
-  const baseLibraryParams = { q: params.q, view, status, sort, album, edit: editId };
+  const baseLibraryParams = { q: params.q, view, tileSize, status, sort, album, edit: editId };
   const showHiddenMedia = filterConfig.show_hidden_media === true;
   const libraryCounts = buildLibraryCounts(mediaItems, showHiddenMedia, album);
   const albumItems = mediaItems.filter((item) => matchesAlbum(item, album));
@@ -662,11 +665,24 @@ export default async function AdminPage({ searchParams }) {
               </form>
             </div>
 
-            <div className="admin-library-tabs" role="tablist" aria-label="Media library view">
-              <a className={`admin-library-tab${view === "feed" ? " admin-library-tab--active" : ""}`} href={buildAdminHref(baseLibraryParams, { view: "feed", edit: null, save: null, media: null, reason: null })}>Feed <span>{formatNumber(libraryCounts.feed)}</span></a>
-              <a className={`admin-library-tab${view === "photos" ? " admin-library-tab--active" : ""}`} href={buildAdminHref(baseLibraryParams, { view: "photos", edit: null, save: null, media: null, reason: null })}>Photos <span>{formatNumber(libraryCounts.photos)}</span></a>
-              <a className={`admin-library-tab${view === "videos" ? " admin-library-tab--active" : ""}`} href={buildAdminHref(baseLibraryParams, { view: "videos", edit: null, save: null, media: null, reason: null })}>Videos <span>{formatNumber(libraryCounts.videos)}</span></a>
-              <a className={`admin-library-tab${view === "hidden" ? " admin-library-tab--active" : ""}`} href={buildAdminHref(baseLibraryParams, { view: "hidden", edit: null, save: null, media: null, reason: null })}>Hidden <span>{formatNumber(libraryCounts.hidden)}</span></a>
+            <div className="admin-library-tabs-row">
+              <div className="admin-library-tabs" role="tablist" aria-label="Media library view">
+                <a className={`admin-library-tab${view === "feed" ? " admin-library-tab--active" : ""}`} href={buildAdminHref(baseLibraryParams, { view: "feed", edit: null, save: null, media: null, reason: null })}>Feed <span>{formatNumber(libraryCounts.feed)}</span></a>
+                <a className={`admin-library-tab${view === "photos" ? " admin-library-tab--active" : ""}`} href={buildAdminHref(baseLibraryParams, { view: "photos", edit: null, save: null, media: null, reason: null })}>Photos <span>{formatNumber(libraryCounts.photos)}</span></a>
+                <a className={`admin-library-tab${view === "videos" ? " admin-library-tab--active" : ""}`} href={buildAdminHref(baseLibraryParams, { view: "videos", edit: null, save: null, media: null, reason: null })}>Videos <span>{formatNumber(libraryCounts.videos)}</span></a>
+                <a className={`admin-library-tab${view === "hidden" ? " admin-library-tab--active" : ""}`} href={buildAdminHref(baseLibraryParams, { view: "hidden", edit: null, save: null, media: null, reason: null })}>Hidden <span>{formatNumber(libraryCounts.hidden)}</span></a>
+              </div>
+              <div className="admin-tile-size-picker" role="group" aria-label="Tile size">
+                {[
+                  { key: "large", label: "▦ Large" },
+                  { key: "medium", label: "⊞ Medium" },
+                  { key: "small", label: "⊟ Small" },
+                  { key: "list", label: "≡ List" },
+                  { key: "details", label: "☰ Details" }
+                ].map(({ key, label }) => (
+                  <a key={key} className={`admin-tile-size-btn${tileSize === key ? " admin-tile-size-btn--active" : ""}`} href={buildAdminHref(baseLibraryParams, { tileSize: key, edit: null, save: null, media: null, reason: null })}>{label}</a>
+                ))}
+              </div>
             </div>
 
             <div className="admin-library-meta">
@@ -678,7 +694,7 @@ export default async function AdminPage({ searchParams }) {
               </small>
             </div>
 
-            <div className="admin-library-grid">
+            <div className="admin-library-grid" data-tile-size={tileSize}>
               {filteredItems.length ? (
                 filteredItems.map((item) => {
                   const tileHref = buildAdminHref(baseLibraryParams, { edit: item.id, save: null, media: null, reason: null });
