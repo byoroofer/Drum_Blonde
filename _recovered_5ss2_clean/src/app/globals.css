@@ -512,9 +512,10 @@ svg {
     0 6px 24px rgba(0, 0, 0, 0.4);
 }
 
-/* Spotlight: 9/16 container, clip TikTok bottom chrome only (no side crop) */
+/* Spotlight: 9/16 container, iframe absolutely positioned to clip TikTok chrome */
 .video-card--spotlight .video-card__player,
 .video-card--spotlight .smart-video--embed {
+  position: relative;
   aspect-ratio: 9 / 16;
   width: 100%;
   height: auto;
@@ -529,11 +530,13 @@ svg {
   background: #000;
 }
 
-/* Push TikTok bottom chrome (≈160px) and top bar (≈60px) outside overflow:hidden */
+/* Iframe taller than container so bottom chrome falls outside overflow:hidden */
 .video-card--spotlight .smart-video--embed iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: calc(100% + 220px);
-  margin-top: -60px;
+  height: 130%;
   border: 0;
 }
 
