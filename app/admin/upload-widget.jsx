@@ -24,6 +24,23 @@ export default function UploadWidget({ uploadEnabled, missingConfig = [] }) {
       return;
     }
 
+    if (files.length > 25) {
+      setStatus("Maximum 25 files per batch. Remove some files and try again.");
+      return;
+    }
+
+    const MAX_FILE = 50 * 1024 * 1024 * 1024;
+    const MAX_TOTAL = 100 * 1024 * 1024 * 1024;
+    const oversized = files.find((f) => f.size > MAX_FILE);
+    if (oversized) {
+      setStatus(`"${oversized.name}" exceeds the 50 GB per-file limit.`);
+      return;
+    }
+    if (files.reduce((s, f) => s + f.size, 0) > MAX_TOTAL) {
+      setStatus("Total batch size exceeds 100 GB.");
+      return;
+    }
+
     const formData = new FormData();
     for (const file of files) {
       formData.append("files", file);
@@ -108,16 +125,16 @@ export default function UploadWidget({ uploadEnabled, missingConfig = [] }) {
           ) : null}
 
           <label className="admin-field">
-            <span>Files</span>
+            <span>Files — up to 25 at once, 50 GB per file, 100 GB total</span>
             <input type="file" multiple accept="image/*,video/*" onChange={(event) => setFiles(Array.from(event.target.files || []))} />
           </label>
 
           {files.length ? (
             <div className="admin-selected-files">
-              {files.slice(0, 6).map((file) => (
+              {files.slice(0, 8).map((file) => (
                 <span key={`${file.name}-${file.size}`}>{file.name}</span>
               ))}
-              {files.length > 6 ? <span>+{files.length - 6} more</span> : null}
+              {files.length > 8 ? <span>+{files.length - 8} more ({files.length} total)</span> : null}
             </div>
           ) : null}
 
