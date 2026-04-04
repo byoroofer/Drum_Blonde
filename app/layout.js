@@ -1,8 +1,9 @@
-﻿import "./globals.css";
+import "./globals.css";
 
 export const metadata = {
-  title: "Brooke Creator Distribution System",
-  description: "A legitimate creator workflow control center for Brooke's drum and music content."
+  title: "Brooke's Official Hub | Drum Blonde",
+  description:
+    "A high-energy link hub for Brooke's drumming content, streams, and merch."
 };
 
 export default function RootLayout({ children }) {
