@@ -512,6 +512,27 @@ svg {
     0 6px 24px rgba(0, 0, 0, 0.4);
 }
 
+/* Spotlight: show the full frame, no cropping */
+.video-card--spotlight .video-card__player,
+.video-card--spotlight .smart-video--embed {
+  aspect-ratio: unset;
+  height: 100%;
+  min-height: 360px;
+  background: #000;
+}
+
+.video-card--spotlight .video-card__player video,
+.video-card--spotlight .smart-video video {
+  object-fit: contain;
+  background: #000;
+}
+
+.video-card--spotlight .smart-video--embed iframe {
+  height: 100%;
+  min-height: 360px;
+  object-fit: contain;
+}
+
 .hero__reel-strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
