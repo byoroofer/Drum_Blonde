@@ -374,24 +374,28 @@ export default async function HomePage() {
         </header>
 
         <div className={`hero__grid hero__grid--video-only${heroVideo || secondaryVideo ? "" : " hero__grid--single-column"}`}>
-          <div className="hero__content">
-            <span className="status-pill">{hero.status}</span>
-            <h2>{hero.headline}</h2>
-            <p>{hero.description}</p>
+          <div className="hero__left">
+            <div className="hero__content">
+              <span className="status-pill">{hero.status}</span>
+              <h2>{hero.headline}</h2>
+              <p>{hero.description}</p>
 
-            <div className="hero__actions">
-              <SocialCta item={{ label: hero.primaryCta.label, href: hero.primaryCta.href, platform: hero.primaryCta.platform }} />
-              <SocialCta item={{ label: hero.secondaryCta.label, href: hero.secondaryCta.href, platform: hero.secondaryCta.platform }} secondary />
+              <div className="hero__actions">
+                <SocialCta item={{ label: hero.primaryCta.label, href: hero.primaryCta.href, platform: hero.primaryCta.platform }} />
+                <SocialCta item={{ label: hero.secondaryCta.label, href: hero.secondaryCta.href, platform: hero.secondaryCta.platform }} secondary />
+              </div>
+
+              <div className="hero__stats">
+                {hero.highlights.map((item) => (
+                  <article key={item.title}>
+                    <strong>{item.title}</strong>
+                    <span>{item.copy}</span>
+                  </article>
+                ))}
+              </div>
             </div>
 
-            <div className="hero__stats">
-              {hero.highlights.map((item) => (
-                <article key={item.title}>
-                  <strong>{item.title}</strong>
-                  <span>{item.copy}</span>
-                </article>
-              ))}
-            </div>
+            {featureLeadVideo ? <VideoCard item={featureLeadVideo} autoPlay className="video-card video-card--left-feature" /> : null}
           </div>
 
           {heroVideo || secondaryVideo ? (

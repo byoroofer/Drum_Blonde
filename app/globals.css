@@ -512,6 +512,44 @@ svg {
     0 6px 24px rgba(0, 0, 0, 0.4);
 }
 
+/* Left column wrapper: text box stacked above left-feature video */
+.hero__left {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Left-column feature video: same tight-box behaviour as spotlight */
+.video-card--left-feature {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: unset;
+  align-self: flex-start;
+  overflow: hidden;
+}
+
+.video-card--left-feature .video-card__player,
+.video-card--left-feature .smart-video--embed {
+  aspect-ratio: 9 / 16;
+  width: 100%;
+  height: auto;
+  min-height: unset;
+  background: #000;
+}
+
+.video-card--left-feature .smart-video--embed iframe,
+.video-card--left-feature .smart-video--tiktok iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  clip-path: none;
+}
+
+.video-card--left-feature .video-card__body {
+  display: none;
+}
+
 /* Spotlight: full right-column width, glow box = embed frame */
 .video-card--spotlight {
   display: flex;

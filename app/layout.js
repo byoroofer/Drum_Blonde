@@ -3,7 +3,8 @@ import "./globals.css";
 export const metadata = {
   title: "Brooke's Official Hub | Drum Blonde",
   description:
-    "A high-energy link hub for Brooke's drumming content, streams, and merch."
+    "A high-energy link hub for Brooke's drumming content, streams, and merch.",
+  icons: { icon: "/icon.png" },
 };
 
 export default function RootLayout({ children }) {
