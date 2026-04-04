@@ -4,6 +4,7 @@ import {
   createAlbumAction,
   deleteMediaAction,
   logoutAction,
+  toggleFeaturedHomeAction,
   toggleHiddenAction,
   updateFilterConfigAction,
   updateMediaAction
@@ -689,14 +690,17 @@ export default async function AdminPage({ searchParams }) {
                   });
                   const hiddenReturnTo = getHiddenToggleReturnTo({ item, baseParams: baseLibraryParams, showHiddenMedia });
 
+                  const featuredReturnTo = buildAdminHref(baseLibraryParams, { edit: selectedItem?.id || null, save: null, media: null, reason: null });
+
                   return (
-                    <article key={item.id} className={`admin-library-tile${selectedItem?.id === item.id ? " admin-library-tile--active" : ""}`}>
-                      <a href={tileHref} className="admin-library-tile__preview">
+                    <article key={item.id} id={`tile-${item.id}`} className={`admin-library-tile${selectedItem?.id === item.id ? " admin-library-tile--active" : ""}${item.featuredHome ? " admin-library-tile--featured" : ""}`}>
+                      <a href={`${tileHref}#tile-${item.id}`} className="admin-library-tile__preview">
                         {renderLibraryPreview(item)}
                         <div className="admin-library-tile__overlay" />
                         <div className="admin-library-tile__badges">
                           <span>{item.kind}</span>
                           <span>{formatDurationLabel(item.durationSeconds)}</span>
+                          {item.featuredHome ? <span className="admin-library-badge--featured">★ home</span> : null}
                           {item.isFlagged ? <span>flagged</span> : null}
                           {item.albumNames?.[0] ? <span>{item.albumNames[0]}</span> : null}
                           {item.isHidden ? <span className="admin-library-badge--hidden">hidden</span> : null}
@@ -705,17 +709,25 @@ export default async function AdminPage({ searchParams }) {
                       <div className="admin-library-tile__body">
                         <div>
                           <strong>{item.title}</strong>
-                          <small>{formatDateLabel(item.updatedAt || item.createdAt)} Â· {formatFileSize(item.byteSize)} Â· {(item.albumNames || []).length || 0} albums</small>
+                          <small>{formatDateLabel(item.updatedAt || item.createdAt)} · {formatFileSize(item.byteSize)} · {(item.albumNames || []).length || 0} albums</small>
                         </div>
                         <div className="admin-library-tile__actions">
-                          <a className="admin-ghost-button" href={tileHref}>Edit</a>
-                          <form action={toggleHiddenAction}>
+                          <form action={toggleFeaturedHomeAction} style={{ display: "contents" }}>
+                            <input type="hidden" name="id" value={item.id} />
+                            <input type="hidden" name="featuredHome" value={item.featuredHome ? "false" : "true"} />
+                            <input type="hidden" name="returnTo" value={`${featuredReturnTo}#tile-${item.id}`} />
+                            <button type="submit" className={`admin-ghost-button${item.featuredHome ? " admin-ghost-button--on" : ""}`} title={item.featuredHome ? "Remove from homepage" : "Feature on homepage"}>
+                              {item.featuredHome ? "★ Featured" : "☆ Feature"}
+                            </button>
+                          </form>
+                          <a className="admin-ghost-button" href={`${tileHref}#tile-${item.id}`}>Edit</a>
+                          <form action={toggleHiddenAction} style={{ display: "contents" }}>
                             <input type="hidden" name="id" value={item.id} />
                             <input type="hidden" name="isHidden" value={item.isHidden ? "false" : "true"} />
-                            <input type="hidden" name="returnTo" value={hiddenReturnTo} />
+                            <input type="hidden" name="returnTo" value={`${hiddenReturnTo}#tile-${item.id}`} />
                             <button type="submit" className="admin-ghost-button">{item.isHidden ? "Unhide" : "Hide"}</button>
                           </form>
-                          <form action={deleteMediaAction}>
+                          <form action={deleteMediaAction} style={{ display: "contents" }}>
                             <input type="hidden" name="id" value={item.id} />
                             <input type="hidden" name="returnTo" value={deleteReturnTo} />
                             <button type="submit" className="admin-delete-button">Delete</button>

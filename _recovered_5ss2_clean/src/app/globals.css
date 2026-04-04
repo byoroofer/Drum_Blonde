@@ -1046,22 +1046,24 @@ svg {
   display: block;
   isolation: isolate;
   line-height: 0;
+  aspect-ratio: 9 / 16;
+  min-height: 320px;
 }
 
 .smart-video--embed iframe {
   display: block;
   width: 100%;
   height: 100%;
+  min-height: 320px;
   border: 0;
   background: #02040f;
 }
 
 .smart-video--tiktok iframe {
-  min-width: 100%;
-  min-height: 100%;
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
   clip-path: inset(2px round 0);
-  transform: scale(1.01);
-  transform-origin: center;
 }
 
 .reel-chip__video.smart-video {
@@ -2114,3 +2116,20 @@ svg {
 
 
 
+
+/* Featured-on-homepage tile badge and state */
+.admin-library-badge--featured {
+  background: rgba(255, 77, 141, 0.85);
+  color: #fff;
+}
+
+.admin-library-tile--featured .admin-library-tile__preview {
+  outline: 2px solid rgba(255, 77, 141, 0.6);
+  outline-offset: -2px;
+}
+
+.admin-ghost-button--on {
+  background: rgba(255, 77, 141, 0.18);
+  border-color: rgba(255, 77, 141, 0.42);
+  color: #ffb3cf;
+}

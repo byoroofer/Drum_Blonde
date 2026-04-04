@@ -131,6 +131,30 @@ export async function createAlbumAction(formData) {
   redirect(buildAdminRedirectUrl(returnTo, { save: "album", reason: null }));
 }
 
+export async function toggleFeaturedHomeAction(formData) {
+  await requireAdmin();
+
+  const id = String(formData.get("id") || "").trim();
+  const returnTo = normalizeAdminReturnTo(formData.get("returnTo"));
+  const featuredHome = formData.get("featuredHome") === "true";
+
+  try {
+    await updateMediaAsset({ id, featuredHome });
+  } catch (error) {
+    redirect(
+      buildAdminRedirectUrl(returnTo, {
+        save: "error",
+        media: id,
+        reason: error instanceof Error ? error.message : "Featured state update failed."
+      })
+    );
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  redirect(buildAdminRedirectUrl(returnTo, { save: featuredHome ? "featured" : "unfeatured", media: id, reason: null }));
+}
+
 export async function toggleHiddenAction(formData) {
   await requireAdmin();
 

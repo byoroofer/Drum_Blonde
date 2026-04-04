@@ -189,7 +189,8 @@ function VideoCard({ item, autoPlay = false, className = "video-card" }) {
           mediaId={item.id}
           autoPlay={autoPlay}
           loop={autoPlay}
-          controls={!autoPlay}
+          muted={false}
+          controls
           eager={autoPlay}
           showPlayButton={!autoPlay}
         />
