@@ -1,36 +1,64 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { loginAction } from "@/app/admin/actions";
-import { isDemoMode } from "@/core/env";
+import { hasAdminCredentials } from "@/lib/env";
+import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminLoginPage({ searchParams }) {
+  redirect("/admin");
   const params = await searchParams;
-  const error = String(params?.error || "").trim();
-  const demo = isDemoMode();
+  const error = params?.error || "";
+  const configured = hasAdminCredentials();
 
   return (
-    <main className="login-shell">
-      <section className="login-card">
-        <span className="eyebrow">Admin Access</span>
-        <h1>Open Brooke's distribution control center.</h1>
+    <main className="admin-shell admin-shell--login">
+      <section className="admin-login-card">
+        <p className="admin-kicker">Drum Blonde Admin</p>
+        <h1>Manage homepage media and featured content.</h1>
         <p>
-          Use Supabase Auth credentials for operators. If Supabase is not configured yet, the dashboard falls back to a read-only demo state so the workflow can still be reviewed.
+          Use the admin dashboard to upload media, feature clips on the homepage,
+          and manage the ranking signals that feed the landing page.
         </p>
-        {error ? <div className="inline-alert inline-alert--error">{error}</div> : null}
-        {demo ? <div className="inline-alert">Demo mode is active because Supabase env vars are missing.</div> : null}
-        <form action={loginAction} className="stack-form">
-          <label>
-            <span>Email</span>
-            <input name="email" type="email" placeholder="operator@brooke.test" required={!demo} />
+
+        {!configured ? (
+          <div className="admin-alert">
+            <strong>Admin credentials are not configured yet.</strong>
+            <p>
+              Add `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `ADMIN_SESSION_SECRET`
+              to your environment before using the dashboard.
+            </p>
+          </div>
+        ) : null}
+
+        {error === "invalid" ? (
+          <p className="admin-error">The username or password was not correct.</p>
+        ) : null}
+
+        {error === "setup" ? (
+          <p className="admin-error">Admin credentials are missing from the environment.</p>
+        ) : null}
+
+        {error === "locked" ? (
+          <p className="admin-error">Too many sign-in attempts. Wait a few minutes and try again.</p>
+        ) : null}
+
+        <form action={loginAction} className="admin-form-stack">
+          <label className="admin-field">
+            <span>Username</span>
+            <input name="username" autoComplete="username" />
           </label>
-          <label>
+
+          <label className="admin-field">
             <span>Password</span>
-            <input name="password" type="password" placeholder="Supabase password" required={!demo} />
+            <input name="password" type="password" autoComplete="current-password" />
           </label>
-          <button type="submit" className="primary-button">Enter dashboard</button>
+
+          <button type="submit" disabled={!configured}>Sign in</button>
         </form>
-        <Link href="/" className="ghost-link">Back to architecture</Link>
+
+        <Link href="/">Return to site</Link>
       </section>
     </main>
   );
 }
-

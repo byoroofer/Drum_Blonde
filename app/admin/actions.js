@@ -1,87 +1,206 @@
-﻿import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
-import { loginWithPassword, logout, requireDashboardUser } from "@/core/auth";
-import { ingestMedia, queueAssetTargets, reviewAsset, runQueuedJobs } from "@/core/repository";
+"use server";
 
-function buildAdminRedirect(params = {}) {
-  const search = new URLSearchParams();
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import {
+  assertLoginAllowed,
+  clearAdminSession,
+  clearFailedLoginAttempts,
+  createAdminSession,
+  registerFailedLoginAttempt,
+  requireAdmin,
+  verifyAdminCredentials
+} from "@/lib/admin-auth";
+import { hasAdminCredentials } from "@/lib/env";
+import {
+  createMediaAlbum,
+  deleteMediaAsset,
+  updateMediaAsset,
+  updateMediaEngineConfig
+} from "@/lib/media-repo";
+
+function normalizeAdminReturnTo(value) {
+  const fallback = "/admin";
+  const input = String(value || "").trim();
+  return input.startsWith("/admin") ? input : fallback;
+}
+
+function buildAdminRedirectUrl(returnTo, params) {
+  const [pathname, search = ""] = normalizeAdminReturnTo(returnTo).split("?");
+  const nextParams = new URLSearchParams(search);
+
   for (const [key, value] of Object.entries(params)) {
-    if (value == null || value === "") continue;
-    search.set(key, String(value));
+    if (value == null || value === "") {
+      nextParams.delete(key);
+      continue;
+    }
+
+    nextParams.set(key, String(value));
   }
-  const query = search.toString();
-  return query ? `/admin?${query}` : "/admin";
+
+  const query = nextParams.toString();
+  return query ? `${pathname}?${query}` : pathname;
 }
 
 export async function loginAction(formData) {
-  "use server";
-  const email = String(formData.get("email") || "").trim();
-  const password = String(formData.get("password") || "");
-  const result = await loginWithPassword(email, password);
-  if (!result.ok) {
-    redirect(`/admin/login?error=${encodeURIComponent(result.message || "Unable to sign in.")}`);
+  if (!hasAdminCredentials()) {
+    redirect("/admin/login?error=setup");
   }
+
+  const username = String(formData.get("username") || "").trim();
+  const password = String(formData.get("password") || "");
+
+  if (!(await assertLoginAllowed(username))) {
+    redirect("/admin/login?error=locked");
+  }
+
+  if (!verifyAdminCredentials(username, password)) {
+    await registerFailedLoginAttempt(username);
+    redirect("/admin/login?error=invalid");
+  }
+
+  await clearFailedLoginAttempts(username);
+  await createAdminSession();
   redirect("/admin");
 }
 
 export async function logoutAction() {
-  "use server";
-  await logout();
+  await clearAdminSession();
   redirect("/admin/login");
 }
 
-export async function ingestMediaAction(formData) {
-  "use server";
-  const actor = await requireDashboardUser();
-  const file = formData.get("media");
-  if (!(file instanceof File) || !file.size) {
-    redirect(buildAdminRedirect({ tab: "library", error: "Select a media file first." }));
+export async function updateMediaAction(formData) {
+  await requireAdmin();
+
+  const id = String(formData.get("id") || "").trim();
+  const returnTo = normalizeAdminReturnTo(formData.get("returnTo"));
+
+  try {
+    await updateMediaAsset({
+      id,
+      title: String(formData.get("title") || "Untitled asset"),
+      description: String(formData.get("description") || ""),
+      tags: String(formData.get("tags") || ""),
+      moderationStatus: String(formData.get("workflowStatus") || formData.get("moderationStatus") || "approved"),
+      overrideStatus: String(formData.get("overrideStatus") || ""),
+      overrideBy: String(formData.get("overrideBy") || ""),
+      overrideNotes: String(formData.get("overrideNotes") || ""),
+      featuredHome: formData.get("featuredHome") === "on",
+      active: formData.get("active") === "on",
+      isHidden: formData.get("isHidden") === "on",
+      albumSlugs: formData.getAll("albumSlugs").map((value) => String(value || "")).filter(Boolean),
+      homeSlot: String(formData.get("homeSlot") || ""),
+      manualRank: String(formData.get("manualRank") || "0")
+    });
+  } catch (error) {
+    redirect(
+      buildAdminRedirectUrl(returnTo, {
+        save: "error",
+        media: id,
+        reason: error instanceof Error ? error.message : "Save failed."
+      })
+    );
   }
 
-  const result = await ingestMedia({
-    actor,
-    file,
-    title: String(formData.get("title") || file.name || "Untitled asset").trim(),
-    description: String(formData.get("description") || "").trim(),
-    sourcePlatform: String(formData.get("sourcePlatform") || "upload"),
-    sourceUrl: String(formData.get("sourceUrl") || "").trim() || null,
-    creatorNotes: String(formData.get("creatorNotes") || "").trim() || null,
-    campaign: String(formData.get("campaign") || "").trim() || null,
-    voicePreset: String(formData.get("voicePreset") || "drummer_girl"),
-    tags: String(formData.get("tags") || "").split(",").map((tag) => tag.trim()).filter(Boolean),
-    destinations: formData.getAll("destinations").map((value) => String(value)),
-    scheduledFor: String(formData.get("scheduledFor") || "").trim() ? new Date(String(formData.get("scheduledFor"))).toISOString() : null,
-    approvalPolicy: String(formData.get("approvalPolicy") || "human_required")
-  });
-
+  revalidatePath("/");
   revalidatePath("/admin");
-  redirect(buildAdminRedirect({ tab: "library", notice: result.notice || "uploaded" }));
+  redirect(buildAdminRedirectUrl(returnTo, { save: "success", media: id, reason: null }));
 }
 
-export async function reviewAssetAction(formData) {
-  "use server";
-  const actor = await requireDashboardUser();
-  const assetId = String(formData.get("assetId") || "").trim();
-  const decision = String(formData.get("decision") || "approved");
-  const result = await reviewAsset(assetId, decision, actor);
+export async function createAlbumAction(formData) {
+  await requireAdmin();
+
+  const returnTo = normalizeAdminReturnTo(formData.get("returnTo"));
+
+  try {
+    await createMediaAlbum({
+      name: String(formData.get("name") || ""),
+      slug: String(formData.get("slug") || ""),
+      description: String(formData.get("description") || "")
+    });
+  } catch (error) {
+    redirect(
+      buildAdminRedirectUrl(returnTo, {
+        save: "error",
+        reason: error instanceof Error ? error.message : "Album creation failed."
+      })
+    );
+  }
+
   revalidatePath("/admin");
-  redirect(buildAdminRedirect({ tab: "approvals", notice: result.notice || decision }));
+  redirect(buildAdminRedirectUrl(returnTo, { save: "album", reason: null }));
 }
 
-export async function queueAssetAction(formData) {
-  "use server";
-  const actor = await requireDashboardUser();
-  const assetId = String(formData.get("assetId") || "").trim();
-  const result = await queueAssetTargets(assetId, actor);
+export async function toggleHiddenAction(formData) {
+  await requireAdmin();
+
+  const id = String(formData.get("id") || "").trim();
+  const returnTo = normalizeAdminReturnTo(formData.get("returnTo"));
+  const isHidden = formData.get("isHidden") === "true";
+
+  try {
+    await updateMediaAsset({ id, isHidden });
+  } catch (error) {
+    redirect(
+      buildAdminRedirectUrl(returnTo, {
+        save: "error",
+        media: id,
+        reason: error instanceof Error ? error.message : "Hidden state update failed."
+      })
+    );
+  }
+
+  revalidatePath("/");
   revalidatePath("/admin");
-  redirect(buildAdminRedirect({ tab: "schedule", notice: result.notice || "queued" }));
+  redirect(buildAdminRedirectUrl(returnTo, { save: isHidden ? "hidden" : "unhidden", media: id, reason: null }));
 }
 
-export async function runJobsAction() {
-  "use server";
-  await requireDashboardUser();
-  await runQueuedJobs(10);
+export async function deleteMediaAction(formData) {
+  await requireAdmin();
+
+  const id = String(formData.get("id") || "").trim();
+  const returnTo = normalizeAdminReturnTo(formData.get("returnTo"));
+
+  try {
+    await deleteMediaAsset(id);
+  } catch (error) {
+    redirect(
+      buildAdminRedirectUrl(returnTo, {
+        save: "error",
+        media: id,
+        reason: error instanceof Error ? error.message : "Delete failed."
+      })
+    );
+  }
+
+  revalidatePath("/");
   revalidatePath("/admin");
-  redirect(buildAdminRedirect({ tab: "schedule", notice: "worker-ran" }));
+  redirect(buildAdminRedirectUrl(returnTo, { save: "deleted", media: id, edit: null, reason: null }));
 }
 
+export async function updateFilterConfigAction(formData) {
+  await requireAdmin();
+
+  const returnTo = normalizeAdminReturnTo(formData.get("returnTo"));
+
+  try {
+    await updateMediaEngineConfig({
+      enabled: formData.get("enabled") === "on",
+      nsfw_detection: formData.get("nsfw_detection") === "on",
+      face_detection: formData.get("face_detection") === "on",
+      object_detection: formData.get("object_detection") === "on",
+      strict_mode: formData.get("strict_mode") === "on",
+      show_hidden_media: formData.get("show_hidden_media") === "on"
+    });
+  } catch (error) {
+    redirect(
+      buildAdminRedirectUrl(returnTo, {
+        save: "error",
+        reason: error instanceof Error ? error.message : "Config update failed."
+      })
+    );
+  }
+
+  revalidatePath("/admin");
+  redirect(buildAdminRedirectUrl(returnTo, { save: "config", reason: null }));
+}
