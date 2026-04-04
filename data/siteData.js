@@ -1,13 +1,13 @@
 export const siteData = {
   brand: {
-    label: "Official Creator Hub",
+    label: "Brooke's place on the internet",
     name: "Drum Blonde"
   },
   hero: {
-    status: "Drummer / Creator / Streaming soon",
-    headline: "Watch Brooke drum first. Follow, stream, and shop after.",
+    status: "Drummer · Creator · Live soon",
+    headline: "Brooke's behind the kit. Come watch.",
     description:
-      "Drum Blonde is Brooke's home base for performance clips, creator updates, future live sessions, and merch. The homepage is built to make the drumming immediate and the next clicks obvious.",
+      "Drum Blonde is Brooke's home online — clips, live sessions, updates, and merch, all in one place.",
     primaryCta: {
       label: "Watch on TikTok",
       href: "https://www.tiktok.com/@drum_blonde",
@@ -20,24 +20,24 @@ export const siteData = {
     },
     highlights: [
       {
-        title: "Drumming first",
-        copy: "The homepage leads with Brooke's playing so first-time visitors understand the lane immediately."
+        title: "Real playing, front and center",
+        copy: "Brooke's drumming is the first thing you see. That's the point."
       },
       {
-        title: "Clear next moves",
-        copy: "Visitors can quickly choose whether to watch more, follow a channel, reach out, or shop."
+        title: "Easy to explore",
+        copy: "Watch more, follow along, reach out, or shop — it's all one click away."
       },
       {
-        title: "Resilient by default",
-        copy: "The public page still has usable featured content even if media services are slow or unavailable."
+        title: "Always working",
+        copy: "The page loads clean and fast, every time."
       }
     ],
     panelLabel: "Built for",
     panelItems: [
-      "A fast first impression centered on Brooke behind the kit.",
-      "One clean public home for clips, channels, live plans, and merch.",
-      "Platform routing that helps visitors keep watching instead of bouncing.",
-      "Reliable public rendering even when shared media data is limited."
+      "Brooke on the kit, front and center from the first second.",
+      "Clips, channels, streams, and merch — all under one roof.",
+      "Clear paths that keep you watching, not bouncing.",
+      "Fast and reliable on any device or connection."
     ]
   },
   primaryLinks: [
@@ -45,7 +45,7 @@ export const siteData = {
       title: "TikTok Clips",
       platformLabel: "TikTok",
       handle: "@drum_blonde",
-      description: "Short-form drumming, quick hits, and the main discovery feed.",
+      description: "Quick clips, drum hits, and where most people find Brooke first.",
       href: "https://www.tiktok.com/@drum_blonde",
       platform: "tiktok"
     },
@@ -53,7 +53,7 @@ export const siteData = {
       title: "Twitch",
       platformLabel: "Twitch",
       handle: "drumdrumbrooke",
-      description: "The live channel for streams, chat, and future monetized sessions.",
+      description: "Live streams, chat, and community. Drop in when she's on.",
       href: "https://www.twitch.tv/drumdrumbrooke",
       platform: "twitch"
     },
@@ -61,7 +61,7 @@ export const siteData = {
       title: "Instagram",
       platformLabel: "Instagram",
       handle: "@brookevinson",
-      description: "Reels, photos, and day-to-day creator updates.",
+      description: "Reels, photos, and behind-the-scenes moments.",
       href: "https://www.instagram.com/brookevinson/",
       platform: "instagram"
     },
@@ -69,7 +69,7 @@ export const siteData = {
       title: "YouTube",
       platformLabel: "YouTube",
       handle: "@drumblonde",
-      description: "Longer cuts, covers, recaps, and future archive content.",
+      description: "Full performances, covers, and longer-form content.",
       href: "https://www.youtube.com/@drumblonde",
       platform: "youtube"
     },
@@ -77,15 +77,15 @@ export const siteData = {
       title: "Bookings & Brand Deals",
       platformLabel: "Email",
       handle: "hello@drumblonde.com",
-      description: "A direct contact path for partnerships, appearances, and sponsorships.",
+      description: "For bookings, brand deals, and appearances.",
       href: "mailto:hello@drumblonde.com",
       platform: "email"
     },
     {
       title: "Merch Shop",
       platformLabel: "Shop",
-      handle: "Shopify powered",
-      description: "Core merch, future drops, and direct support.",
+      handle: "shop.drumblonde.com",
+      description: "Tees, hoodies, gear — and more drops coming.",
       href: "https://shop.drumblonde.com",
       platform: "shop"
     }
@@ -118,19 +118,19 @@ export const siteData = {
   ],
   streamingPlans: [
     {
-      title: "Stay ready for live sessions",
+      title: "Live sessions are coming",
       description:
-        "Twitch keeps a visible lane on the homepage, so Brooke can promote live sessions without another public redesign."
+        "Brooke's Twitch lane is already on the page. When she goes live, it's ready."
     },
     {
-      title: "Keep drumming at the center",
+      title: "Drumming stays the focus",
       description:
-        "Live content can grow alongside clips and merch without shifting the page away from Brooke's performance identity."
+        "Live content fits right alongside clips and merch without shifting what the page is built around."
     },
     {
-      title: "Route visitors by intent",
+      title: "Everyone finds what they came for",
       description:
-        "People who want clips, streams, contact, or merch each get a clear path instead of one crowded link dump."
+        "Clips, streams, contact, and merch — each with its own clear path."
     }
   ],
   mediaGallery: [
@@ -187,7 +187,7 @@ export const siteData = {
   featuredMerch: [
     {
       name: "Signature Logo Tee",
-      description: "Clean everyday merch built around the core Drum Blonde mark.",
+      description: "Everyday tee, signature mark. Always in rotation.",
       price: "$32",
       badge: "Best seller",
       href: "https://shop.drumblonde.com/products/signature-logo-tee",
@@ -195,7 +195,7 @@ export const siteData = {
     },
     {
       name: "Practice Pad Club Hoodie",
-      description: "A heavier layer for regular viewers, supporters, and stream community.",
+      description: "For the regulars. Warm, comfortable, community-approved.",
       price: "$58",
       badge: "New drop",
       href: "https://shop.drumblonde.com/products/practice-pad-club-hoodie",
@@ -203,7 +203,7 @@ export const siteData = {
     },
     {
       name: "Drum Blonde Stick Bag",
-      description: "A gear-forward piece that feels aligned with Brooke's lane, not random filler merch.",
+      description: "Built for players. Brooke-approved.",
       price: "$46",
       badge: "Gear pick",
       href: "https://shop.drumblonde.com/products/drum-blonde-stick-bag",
@@ -212,7 +212,6 @@ export const siteData = {
   ],
   shop: {
     shopUrl: "https://shop.drumblonde.com",
-    description:
-      "The store stays accessible here without overtaking the homepage, and it can expand into drops or featured products later."
+    description: "More in the shop — plus new drops coming."
   }
 };

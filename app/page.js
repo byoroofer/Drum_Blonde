@@ -170,7 +170,7 @@ function EmbeddedVideo({ item, className = "video-card__player", autoPlay = fals
   );
 }
 
-function VideoCard({ item, autoPlay = false, className = "video-card" }) {
+function VideoCard({ item, autoPlay = false, muted = true, className = "video-card" }) {
   if (!item) {
     return null;
   }
@@ -189,7 +189,7 @@ function VideoCard({ item, autoPlay = false, className = "video-card" }) {
           mediaId={item.id}
           autoPlay={autoPlay}
           loop={autoPlay}
-          muted={false}
+          muted={muted}
           controls
           eager={autoPlay}
           showPlayButton={!autoPlay}
@@ -400,7 +400,7 @@ export default async function HomePage() {
 
           {heroVideo || secondaryVideo ? (
             <aside className="hero__aside hero__aside--video-only">
-              {heroVideo ? <VideoCard item={heroVideo} autoPlay className="video-card video-card--spotlight" /> : null}
+              {heroVideo ? <VideoCard item={heroVideo} autoPlay muted={false} className="video-card video-card--spotlight" /> : null}
               {secondaryVideo ? <VideoCard item={secondaryVideo} autoPlay className="video-card video-card--support" /> : null}
             </aside>
           ) : null}
@@ -411,7 +411,7 @@ export default async function HomePage() {
             {reelVideos.map((item, index) => (
               <article key={`${item.id}-${index}`} className="reel-chip">
                 {item.embedUrl ? (
-                  <EmbeddedVideo item={item} className="reel-chip__video" autoPlay={index < 2} />
+                  <EmbeddedVideo item={item} className="reel-chip__video" autoPlay />
                 ) : (
                   <TrackableVideo
                     className="reel-chip__video"
@@ -420,12 +420,12 @@ export default async function HomePage() {
                     poster={item.posterUrl || item.thumbnailUrl}
                     title={item.title}
                     mediaId={item.id}
-                    autoPlay={index < 2}
-                    loop={index < 2}
-                    muted={false}
+                    autoPlay
+                    loop
+                    muted
                     controls
-                    eager={index < 2}
-                    showPlayButton={index >= 2}
+                    eager
+                    showPlayButton={false}
                   />
                 )}
                 <div>
@@ -450,17 +450,17 @@ export default async function HomePage() {
 
       <section className="section section--media section--media-compact">
         <SectionHeading
-          eyebrow="Featured Drumming"
+          eyebrow="Featured"
           title="Start with the clips."
-          description="Featured drum performances stay closest to the top so first-time visitors land on Brooke's playing before anything else."
+          description="The best clips, right up top."
         />
 
         <div className={`feature-rank-grid feature-rank-grid--video-only${featureLeadVideo ? "" : " feature-rank-grid--copy-only"}`}>
           {featureLeadVideo ? <VideoCard item={featureLeadVideo} className="video-card feature-rank-card feature-rank-card--video" /> : null}
 
           <article className="feature-rank-card feature-rank-card--copy">
-            <p className="feature-rank-card__eyebrow">Why this page works</p>
-            <h3>One strong viewing path, then clean routes into the rest of Brooke's world.</h3>
+            <p className="feature-rank-card__eyebrow">About this page</p>
+            <h3>One great view. Then everywhere else.</h3>
             <ul>
               {hero.panelItems.map((item) => (
                 <li key={item}>{item}</li>
@@ -474,7 +474,7 @@ export default async function HomePage() {
         <SectionHeading
           eyebrow="Start Here"
           title="Watch, book, or keep up."
-          description="The next clicks are obvious without competing with the drumming content above."
+          description="Every link has a purpose. Pick yours."
         />
 
         <div className="link-grid">
@@ -488,8 +488,8 @@ export default async function HomePage() {
         <div>
           <SectionHeading
             eyebrow="Live Lane"
-            title="Streaming stays visible without taking over."
-            description="Twitch remains a strong secondary route, ready for live traffic whenever Brooke goes on."
+            title="Live is coming. The door's already open."
+            description="Brooke's Twitch channel is ready — follow now so you don't miss the first stream."
           />
           <div className="plan-list">
             {streamingPlans.map((item) => (
@@ -504,8 +504,8 @@ export default async function HomePage() {
         <div>
           <SectionHeading
             eyebrow="Channels"
-            title="Keep platform routing clean."
-            description="Each channel has a distinct purpose so visitors can move from short clips to longer watching, following, or contact."
+            title="Find Brooke everywhere."
+            description="Short clips, live streams, long-form content, and more."
           />
           <div className="social-list">
             {socialLinks.map((item) => (
@@ -522,8 +522,8 @@ export default async function HomePage() {
       <section className="section section--shop">
         <SectionHeading
           eyebrow="Merch"
-          title="Merch is easy to find, not the main event."
-          description="Store access stays present for supporters while the homepage continues to lead with Brooke's drumming."
+          title="Grab something before you go."
+          description="Real merch made for people who actually watch."
         />
 
         <div className="merch-grid">
@@ -533,7 +533,7 @@ export default async function HomePage() {
         </div>
 
         <div className="shop-cta">
-          <p>{merchLink ? `${shop.description} ${merchLink.title} stays available as a direct route for ready-to-buy visitors.` : shop.description}</p>
+          <p>{shop.description}</p>
           <TrackableLink href={shop.shopUrl} eventLabel="Open the full store">
             Open the full store
           </TrackableLink>
