@@ -4,9 +4,12 @@ import TileActionForm from "@/app/admin/tile-action-form";
 import {
   createAlbumAction,
   deleteMediaAction,
+  deleteMediaSilent,
   logoutAction,
   toggleFeaturedHomeAction,
+  toggleFeaturedHomeSilent,
   toggleHiddenAction,
+  toggleHiddenSilent,
   updateFilterConfigAction,
   updateMediaAction
 } from "@/app/admin/actions";
@@ -729,7 +732,7 @@ export default async function AdminPage({ searchParams }) {
                           <small>{formatDateLabel(item.updatedAt || item.createdAt)} · {formatFileSize(item.byteSize)} · {(item.albumNames || []).length || 0} albums</small>
                         </div>
                         <div className="admin-library-tile__actions">
-                          <TileActionForm action={toggleFeaturedHomeAction} style={{ display: "contents" }}>
+                          <TileActionForm action={toggleFeaturedHomeSilent} style={{ display: "contents" }}>
                             <input type="hidden" name="id" value={item.id} />
                             <input type="hidden" name="featuredHome" value={item.featuredHome ? "false" : "true"} />
                             <button type="submit" className={`admin-ghost-button${item.featuredHome ? " admin-ghost-button--on" : ""}`} title={item.featuredHome ? "Remove from homepage" : "Feature on homepage"}>
@@ -737,12 +740,12 @@ export default async function AdminPage({ searchParams }) {
                             </button>
                           </TileActionForm>
                           <a className="admin-ghost-button" href={`${tileHref}#tile-${item.id}`}>Edit</a>
-                          <TileActionForm action={toggleHiddenAction} style={{ display: "contents" }}>
+                          <TileActionForm action={toggleHiddenSilent} style={{ display: "contents" }}>
                             <input type="hidden" name="id" value={item.id} />
                             <input type="hidden" name="isHidden" value={item.isHidden ? "false" : "true"} />
                             <button type="submit" className="admin-ghost-button">{item.isHidden ? "Unhide" : "Hide"}</button>
                           </TileActionForm>
-                          <TileActionForm action={deleteMediaAction} style={{ display: "contents" }}>
+                          <TileActionForm action={deleteMediaSilent} style={{ display: "contents" }}>
                             <input type="hidden" name="id" value={item.id} />
                             <button type="submit" className="admin-delete-button">Delete</button>
                           </TileActionForm>

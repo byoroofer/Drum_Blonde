@@ -228,3 +228,30 @@ export async function updateFilterConfigAction(formData) {
   revalidatePath("/admin");
   redirect(buildAdminRedirectUrl(returnTo, { save: "config", reason: null }));
 }
+
+// No-redirect variants for client-side tile actions (no scroll jump)
+export async function toggleFeaturedHomeSilent(formData) {
+  await requireAdmin();
+  const id = String(formData.get("id") || "").trim();
+  const featuredHome = formData.get("featuredHome") === "true";
+  await updateMediaAsset({ id, featuredHome });
+  revalidatePath("/");
+  revalidatePath("/admin");
+}
+
+export async function toggleHiddenSilent(formData) {
+  await requireAdmin();
+  const id = String(formData.get("id") || "").trim();
+  const isHidden = formData.get("isHidden") === "true";
+  await updateMediaAsset({ id, isHidden });
+  revalidatePath("/");
+  revalidatePath("/admin");
+}
+
+export async function deleteMediaSilent(formData) {
+  await requireAdmin();
+  const id = String(formData.get("id") || "").trim();
+  await deleteMediaAsset(id);
+  revalidatePath("/");
+  revalidatePath("/admin");
+}
