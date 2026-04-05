@@ -70,7 +70,7 @@ export const siteData = {
       platformLabel: "YouTube",
       handle: "@drumblonde",
       description: "Full performances, covers, and longer-form content.",
-      href: "https://www.youtube.com/@drumblonde",
+      href: "https://www.youtube.com/@Drum_Blonde",
       platform: "youtube"
     },
     {
@@ -112,7 +112,7 @@ export const siteData = {
     {
       label: "YouTube",
       handle: "@drumblonde",
-      href: "https://www.youtube.com/@drumblonde",
+      href: "https://www.youtube.com/@Drum_Blonde",
       platform: "youtube"
     }
   ],
