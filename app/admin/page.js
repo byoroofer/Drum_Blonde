@@ -701,31 +701,32 @@ export default async function AdminPage({ searchParams }) {
 
                   return (
                     <article key={item.id} id={`tile-${item.id}`} className={`admin-library-tile${selectedItem?.id === item.id ? " admin-library-tile--active" : ""}${item.featuredHome ? " admin-library-tile--featured" : ""}`}>
-                      <a href={`${tileHref}#tile-${item.id}`} className="admin-library-tile__preview">
-                        {renderLibraryPreview(item)}
-                        <div className="admin-library-tile__overlay" />
-                        <div className="admin-library-tile__badges">
-                          <span>{item.kind}</span>
-                          <span>{formatDurationLabel(item.durationSeconds)}</span>
-                          {item.featuredHome ? <span className="admin-library-badge--featured">★ home</span> : null}
-                          {item.isFlagged ? <span>flagged</span> : null}
-                          {item.albumNames?.[0] ? <span>{item.albumNames[0]}</span> : null}
-                          {item.isHidden ? <span className="admin-library-badge--hidden">hidden</span> : null}
-                        </div>
-                      </a>
+                      <div className="admin-library-tile__preview">
+                        <a href={`${tileHref}#tile-${item.id}`} className="admin-library-tile__preview-link">
+                          {renderLibraryPreview(item)}
+                          <div className="admin-library-tile__overlay" />
+                          <div className="admin-library-tile__badges">
+                            <span>{item.kind}</span>
+                            <span>{formatDurationLabel(item.durationSeconds)}</span>
+                            {item.isFlagged ? <span>flagged</span> : null}
+                            {item.albumNames?.[0] ? <span>{item.albumNames[0]}</span> : null}
+                            {item.isHidden ? <span className="admin-library-badge--hidden">hidden</span> : null}
+                          </div>
+                        </a>
+                        <TileActionForm action={toggleFeaturedHomeSilent} className="admin-library-tile__star-form">
+                          <input type="hidden" name="id" value={item.id} />
+                          <input type="hidden" name="featuredHome" value={item.featuredHome ? "false" : "true"} />
+                          <button type="submit" className={`admin-library-tile__star${item.featuredHome ? " admin-library-tile__star--on" : ""}`} title={item.featuredHome ? "Remove from homepage" : "Feature on homepage"}>
+                            {item.featuredHome ? "★" : "☆"}
+                          </button>
+                        </TileActionForm>
+                      </div>
                       <div className="admin-library-tile__body">
                         <div>
                           <strong>{item.title}</strong>
                           <small>{formatDateLabel(item.updatedAt || item.createdAt)} · {formatFileSize(item.byteSize)} · {(item.albumNames || []).length || 0} albums</small>
                         </div>
                         <div className="admin-library-tile__actions">
-                          <TileActionForm action={toggleFeaturedHomeSilent} style={{ display: "contents" }}>
-                            <input type="hidden" name="id" value={item.id} />
-                            <input type="hidden" name="featuredHome" value={item.featuredHome ? "false" : "true"} />
-                            <button type="submit" className={`admin-ghost-button${item.featuredHome ? " admin-ghost-button--on" : ""}`} title={item.featuredHome ? "Remove from homepage" : "Feature on homepage"}>
-                              {item.featuredHome ? "★ Featured" : "☆ Feature"}
-                            </button>
-                          </TileActionForm>
                           <a className="admin-ghost-button" href={`${tileHref}#tile-${item.id}`}>Edit</a>
                           <TileActionForm action={toggleHiddenSilent} style={{ display: "contents" }}>
                             <input type="hidden" name="id" value={item.id} />
