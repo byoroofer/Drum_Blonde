@@ -304,8 +304,10 @@ function getSortLabel(sort) {
 }
 
 function renderLibraryPreview(item) {
-  const poster = item.posterUrl || item.thumbnailUrl || "/images/brooke-tiktok-avatar.jpg";
-  return <img className="admin-library-tile__media" src={poster} alt={item.title} loading="lazy" decoding="async" />;
+  const isVideoFile = (url) => url && /\.(mov|mp4|avi|mkv|webm|m4v)(\?|$)/i.test(url);
+  const thumb = item.thumbnailUrl || item.posterUrl;
+  const poster = (thumb && !isVideoFile(thumb)) ? thumb : "/images/brooke-tiktok-avatar.jpg";
+  return <img className="admin-library-tile__media" src={poster} alt={item.title || ""} loading="lazy" decoding="async" />;
 }
 
 function DisclosureCard({ kicker, title, note, badge, defaultOpen = true, children, className = "" }) {
