@@ -306,8 +306,19 @@ function getSortLabel(sort) {
 function renderLibraryPreview(item) {
   const isVideoFile = (url) => url && /\.(mov|mp4|avi|mkv|webm|m4v)(\?|$)/i.test(url);
   const thumb = item.thumbnailUrl || item.posterUrl;
-  const poster = (thumb && !isVideoFile(thumb)) ? thumb : "/images/brooke-tiktok-avatar.jpg";
-  return <img className="admin-library-tile__media" src={poster} alt={item.title || ""} loading="lazy" decoding="async" />;
+  const hasImage = thumb && !isVideoFile(thumb);
+
+  if (!hasImage) {
+    // No usable thumbnail — show a styled placeholder
+    return (
+      <div className="admin-library-tile__placeholder">
+        <span className="admin-library-tile__placeholder-icon">{item.mimeType?.startsWith("video") ? "▶" : "🖼"}</span>
+        <span className="admin-library-tile__placeholder-label">{item.mimeType || "media"}</span>
+      </div>
+    );
+  }
+
+  return <img className="admin-library-tile__media" src={thumb} alt={item.title || ""} loading="lazy" decoding="async" />;
 }
 
 function DisclosureCard({ kicker, title, note, badge, defaultOpen = true, children, className = "" }) {

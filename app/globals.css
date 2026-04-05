@@ -1837,6 +1837,29 @@ svg {
   inset: 0;
 }
 
+.admin-library-tile__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #0e1525 0%, #1a2240 100%);
+}
+
+.admin-library-tile__placeholder-icon {
+  font-size: 28px;
+  opacity: 0.6;
+}
+
+.admin-library-tile__placeholder-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.35);
+}
+
 .admin-library-tile__star-form {
   position: absolute;
   top: 8px;
