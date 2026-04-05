@@ -459,8 +459,8 @@ export default async function HomePage() {
           {featureLeadVideo ? <VideoCard item={featureLeadVideo} className="video-card feature-rank-card feature-rank-card--video" /> : null}
 
           <article className="feature-rank-card feature-rank-card--copy">
-            <p className="feature-rank-card__eyebrow">About this page</p>
-            <h3>One great view. Then everywhere else.</h3>
+            <p className="feature-rank-card__eyebrow">About Brooke</p>
+            <h3>The kind of woman who makes life look like it has a soundtrack.</h3>
             <ul>
               {hero.panelItems.map((item) => (
                 <li key={item}>{item}</li>

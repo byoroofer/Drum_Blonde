@@ -4,10 +4,10 @@ export const siteData = {
     name: "Drum Blonde"
   },
   hero: {
-    status: "Drummer · Creator · Live soon",
-    headline: "Brooke's behind the kit. Come watch.",
+    status: "DFW · Drummer · Creator · Business Owner",
+    headline: "She picked up the drums and didn't look back.",
     description:
-      "Drum Blonde is Brooke's home online — clips, live sessions, updates, and merch, all in one place.",
+      "Brooke is a business owner, mom of three, and certified teacher who turned a curious moment at the kit into a full-on creative identity. Based in Dallas–Fort Worth, she shows up fully — and people notice.",
     primaryCta: {
       label: "Watch on TikTok",
       href: "https://www.tiktok.com/@drum_blonde",
@@ -20,24 +20,24 @@ export const siteData = {
     },
     highlights: [
       {
-        title: "Real playing, front and center",
-        copy: "Brooke's drumming is the first thing you see. That's the point."
+        title: "Started from curiosity",
+        copy: "Brooke didn't ease into drumming — she attacked it. Energy, rhythm, and confidence from session one."
       },
       {
-        title: "Easy to explore",
-        copy: "Watch more, follow along, reach out, or shop — it's all one click away."
+        title: "Built for real life",
+        copy: "Business owner. Mom of three. College grad. Certified teacher. She runs it all — and still finds time to perform."
       },
       {
-        title: "Always working",
-        copy: "The page loads clean and fast, every time."
+        title: "Just getting started",
+        copy: "The clips, the streams, the merch — this is the beginning of something. Come be part of it."
       }
     ],
-    panelLabel: "Built for",
+    panelLabel: "About Brooke",
     panelItems: [
-      "Brooke on the kit, front and center from the first second.",
-      "Clips, channels, streams, and merch — all under one roof.",
-      "Clear paths that keep you watching, not bouncing.",
-      "Fast and reliable on any device or connection."
+      "Quick-witted and effortlessly engaging — she makes people laugh in seconds and feel comfortable just as fast.",
+      "Active by nature: working out, boating, sports, sunshine, and travel fuel her.",
+      "She blends beauty, humor, and real life into content that feels genuine and magnetic.",
+      "Whether she's behind a camera, a business, or a drum kit — she shows up fully."
     ]
   },
   primaryLinks: [
@@ -120,17 +120,17 @@ export const siteData = {
     {
       title: "Live sessions are coming",
       description:
-        "Brooke's Twitch lane is already on the page. When she goes live, it's ready."
+        "Brooke's bringing the same energy she puts into every drum session to Twitch. Follow now so you're there for the first one."
     },
     {
-      title: "Drumming stays the focus",
+      title: "The same Brooke, in real time",
       description:
-        "Live content fits right alongside clips and merch without shifting what the page is built around."
+        "Fun, quick-witted, and genuinely engaging — live just means no cuts. Expect the same presence she brings to every clip."
     },
     {
-      title: "Everyone finds what they came for",
+      title: "More than just playing",
       description:
-        "Clips, streams, contact, and merch — each with its own clear path."
+        "Streams are a chance to connect — chat, hang out, and watch someone who loves what they do doing it live."
     }
   ],
   mediaGallery: [
