@@ -305,21 +305,6 @@ function getSortLabel(sort) {
 
 function renderLibraryPreview(item) {
   const poster = item.posterUrl || item.thumbnailUrl || "/images/brooke-tiktok-avatar.jpg";
-
-  if (item.kind === "video" && item.playbackUrl) {
-    return (
-      <TrackableVideo
-        className="admin-library-tile__media"
-        src={item.url}
-        playbackUrl={item.playbackUrl}
-        poster={poster}
-        title={item.title}
-        controls={false}
-        showPlayButton={false}
-      />
-    );
-  }
-
   return <img className="admin-library-tile__media" src={poster} alt={item.title} loading="lazy" decoding="async" />;
 }
 
