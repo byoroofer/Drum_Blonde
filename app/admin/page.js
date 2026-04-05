@@ -1,5 +1,6 @@
 ﻿import GooglePhotosImportPanel from "@/app/admin/google-photos-import-panel";
 import RemoteUrlImportPanel from "@/app/admin/remote-url-import-panel";
+import TileActionForm from "@/app/admin/tile-action-form";
 import {
   createAlbumAction,
   deleteMediaAction,
@@ -728,26 +729,23 @@ export default async function AdminPage({ searchParams }) {
                           <small>{formatDateLabel(item.updatedAt || item.createdAt)} · {formatFileSize(item.byteSize)} · {(item.albumNames || []).length || 0} albums</small>
                         </div>
                         <div className="admin-library-tile__actions">
-                          <form action={toggleFeaturedHomeAction} style={{ display: "contents" }}>
+                          <TileActionForm action={toggleFeaturedHomeAction} style={{ display: "contents" }}>
                             <input type="hidden" name="id" value={item.id} />
                             <input type="hidden" name="featuredHome" value={item.featuredHome ? "false" : "true"} />
-                            <input type="hidden" name="returnTo" value={`${featuredReturnTo}#tile-${item.id}`} />
                             <button type="submit" className={`admin-ghost-button${item.featuredHome ? " admin-ghost-button--on" : ""}`} title={item.featuredHome ? "Remove from homepage" : "Feature on homepage"}>
                               {item.featuredHome ? "★ Featured" : "☆ Feature"}
                             </button>
-                          </form>
+                          </TileActionForm>
                           <a className="admin-ghost-button" href={`${tileHref}#tile-${item.id}`}>Edit</a>
-                          <form action={toggleHiddenAction} style={{ display: "contents" }}>
+                          <TileActionForm action={toggleHiddenAction} style={{ display: "contents" }}>
                             <input type="hidden" name="id" value={item.id} />
                             <input type="hidden" name="isHidden" value={item.isHidden ? "false" : "true"} />
-                            <input type="hidden" name="returnTo" value={`${hiddenReturnTo}#tile-${item.id}`} />
                             <button type="submit" className="admin-ghost-button">{item.isHidden ? "Unhide" : "Hide"}</button>
-                          </form>
-                          <form action={deleteMediaAction} style={{ display: "contents" }}>
+                          </TileActionForm>
+                          <TileActionForm action={deleteMediaAction} style={{ display: "contents" }}>
                             <input type="hidden" name="id" value={item.id} />
-                            <input type="hidden" name="returnTo" value={deleteReturnTo} />
                             <button type="submit" className="admin-delete-button">Delete</button>
-                          </form>
+                          </TileActionForm>
                         </div>
                       </div>
                     </article>
