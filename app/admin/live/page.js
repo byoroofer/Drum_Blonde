@@ -22,7 +22,7 @@ export default async function AdminLivePage() {
   const dashboardUrl = `https://dashboard.twitch.tv/u/${liveConfig.twitchChannel}/home`;
 
   return (
-    <main className="admin-shell">
+    <div className="admin-shell">
       <section className="admin-header-card">
         <div>
           <p className="admin-kicker">Live Stream Console</p>
@@ -105,6 +105,6 @@ export default async function AdminLivePage() {
           </section>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

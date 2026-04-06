@@ -298,26 +298,6 @@ function buildStaticHomepageMedia() {
   };
 }
 
-function sortHomepageVideos(items) {
-  return [...(items || [])].sort((left, right) => {
-    const leftIsEmbed = Boolean(left?.embedUrl);
-    const rightIsEmbed = Boolean(right?.embedUrl);
-
-    if (leftIsEmbed !== rightIsEmbed) {
-      return leftIsEmbed ? 1 : -1;
-    }
-
-    const leftProvider = left?.provider === "mux" || left?.provider === "cloudflare" || left?.provider === "hls" ? 1 : 0;
-    const rightProvider = right?.provider === "mux" || right?.provider === "cloudflare" || right?.provider === "hls" ? 1 : 0;
-
-    if (leftProvider !== rightProvider) {
-      return rightProvider - leftProvider;
-    }
-
-    return 0;
-  });
-}
-
 export default async function HomePage() {
   const {
     brand,
@@ -339,15 +319,12 @@ export default async function HomePage() {
   }
 
   const homepageMedia = media.home;
-  const uniqueVideoPool = sortHomepageVideos(
-    uniqueMedia([
-      homepageMedia.heroVideo,
-      homepageMedia.secondaryVideo,
-      homepageMedia.tertiaryVideo,
-      ...(homepageMedia.backgroundVideos || []),
-      ...(media.videos || [])
-    ])
-  );
+  const uniqueVideoPool = uniqueMedia([
+    homepageMedia.heroVideo,
+    homepageMedia.secondaryVideo,
+    homepageMedia.tertiaryVideo,
+    ...(homepageMedia.backgroundVideos || [])
+  ]);
   const prioritizedVideos = fillMediaSlots(uniqueVideoPool, 6);
   const primaryLinksWithoutShop = primaryLinks.filter((item) => item.platform !== "shop");
   const galleryLink = {

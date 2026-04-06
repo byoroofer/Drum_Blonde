@@ -38,9 +38,9 @@ Track unresolved bugs, risks, and follow-ups. Close or update entries when the s
 
 - Status: Open
 - Severity: Low
-- Context: The root tree was already live on production, and the `2026-04-06` admin-login repair restores auth gating in code. Deployment/build status can be confirmed separately, but no browser-level verification of `drumblonde.tjware.me`, `/gallery`, `/live`, the admin login screen, or post-login admin behavior was performed in this session.
-- Risk: Production may be deployed yet still needs a real browser pass to confirm unauthenticated `/admin` access redirects to `/admin/login`, valid sign-in reaches the dashboard, and the existing homepage/media behavior remains intact.
-- Next action: Open the live site in a browser and confirm the homepage shows only star-marked media, thumbnails render correctly, `/gallery` loads, `/live` behaves as expected, and `/admin` now requires login end-to-end.
+- Context: The root tree is live on production, the auth code was restored in commit `7001fa4`, and the latest local admin refactor now introduces a persistent sidebar plus a dedicated `/admin/media` route. Browser-level verification still has not been performed in this session.
+- Risk: Build status is confirmed, but a real browser pass is still needed to confirm `/admin` accepts the corrected credentials, the new admin navigation and media grid behave correctly, video thumbnails populate as expected, and `/gallery` plus `/live` still behave normally.
+- Next action: Open the live site in a browser and confirm `/admin`, `/admin/media`, homepage spotlight ordering, video thumbnails, `/gallery`, and `/live` all behave as intended.
 
 ## ISSUE-2026-04-05-001 | Live-mode override is temporary in-memory state only
 
@@ -49,3 +49,11 @@ Track unresolved bugs, risks, and follow-ups. Close or update entries when the s
 - Context: `data/liveConfig.js` stores `isLiveOverride` in process memory so `/admin/live` can toggle the homepage banner and `/live` state without touching existing admin actions or persistence layers.
 - Risk: The toggle resets on restart, deploy, or serverless cold start, so operators cannot rely on it as a durable live-state flag.
 - Next action: Leave as-is unless the user asks for persistent live-state storage or automatic Twitch status detection.
+
+## ISSUE-2026-04-06-001 | Admin UX refactor still needs browser-level verification
+
+- Status: Open
+- Severity: Medium
+- Context: `cmd /c npx tsc --noEmit` and `cmd /c npm run build` now pass locally, but the admin changes were validated only by build/type checks and code inspection.
+- Risk: Without a browser pass, small layout or interaction issues in the new sidebar shell, pagination flow, or thumbnail backfill path could still be present.
+- Next action: Browser-test `/admin`, `/admin/media`, starring, hiding, editing, and missing-thumbnail behavior with a real populated library.

@@ -213,7 +213,7 @@ export default function GooglePhotosImportPanel({ importEnabled, missingRequired
             <div>
               <p>
                 This admin now uses Google&apos;s Picker API instead of the older library-wide search path. The picker hands
-                control to Google Photos, then the selected items are pulled into Supabase storage.
+                control to Google Photos, then the selected items are copied into storage.
               </p>
               <p>
                 Open the picker in the same Chrome profile that is already signed into the Google account holding the
@@ -223,7 +223,7 @@ export default function GooglePhotosImportPanel({ importEnabled, missingRequired
             </div>
             <div className="admin-mini-note">
               <strong>Picker-based flow</strong>
-              <span>Use the Brooke Google Photos browser profile, then choose the exact files you want to import.</span>
+              <span>Use the Brooke Google Photos browser profile, then choose the exact files you want to bring into the library.</span>
             </div>
           </div>
 

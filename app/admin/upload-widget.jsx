@@ -87,7 +87,7 @@ export default function UploadWidget({ uploadEnabled, missingConfig = [] }) {
       setStatus("Upload failed due to a network error.");
     };
 
-    setStatus(`Uploading ${files.length} file(s) to Supabase Storage...`);
+    setStatus(`Uploading ${files.length} file(s) to storage...`);
     setProgress(0);
     request.send(formData);
   }
@@ -100,7 +100,7 @@ export default function UploadWidget({ uploadEnabled, missingConfig = [] }) {
             <div>
               <p className="admin-kicker">Upload Panel</p>
               <h2>Upload media</h2>
-              <p>Drag in files, upload to Supabase first, and keep the whole ingest path visible.</p>
+              <p>Drag in files, upload them into storage, and keep the full media processing path visible.</p>
             </div>
             <span className="admin-collapsible__meta">Collapse</span>
           </div>
@@ -110,18 +110,18 @@ export default function UploadWidget({ uploadEnabled, missingConfig = [] }) {
           <div className="admin-section-heading">
             <div>
               <p>
-                Files are uploaded to Supabase Storage first, written into Postgres immediately,
-                then enriched with metadata and optional filter tags. Nothing is silently blocked.
+                Files are written to storage first, added to the database immediately,
+                then enriched with metadata and optional media processing tags. Nothing is silently blocked.
               </p>
             </div>
             <div className="admin-mini-note">
               <strong>Storage target</strong>
-              <span>Bucket `drum-media` stores originals first. Filtering is metadata-only and fully reversible.</span>
+              <span>Bucket `drum-media` stores originals first. Media processing stays metadata-only and fully reversible.</span>
             </div>
           </div>
 
           {!uploadEnabled ? (
-            <p className="admin-note">Missing configuration: {missingConfig.join(", ") || "Supabase env vars"}.</p>
+            <p className="admin-note">Missing configuration: {missingConfig.join(", ") || "storage settings"}.</p>
           ) : null}
 
           <label className="admin-field">
@@ -180,7 +180,7 @@ export default function UploadWidget({ uploadEnabled, missingConfig = [] }) {
 
           <div className="admin-upload-actions">
             <button type="button" onClick={handleSubmit} disabled={disabled}>
-              {isPending ? "Refreshing..." : "Upload to Supabase"}
+              {isPending ? "Refreshing..." : "Upload to Storage"}
             </button>
             <small>{status || `${files.length} file(s) selected`}</small>
           </div>
@@ -195,5 +195,3 @@ export default function UploadWidget({ uploadEnabled, missingConfig = [] }) {
     </section>
   );
 }
-
-

@@ -27,7 +27,7 @@ export default function RemoteUrlImportPanel({ importEnabled, missingConfig = []
     }
 
     setIsSubmitting(true);
-    setStatus("Importing remote media into Supabase Storage...");
+    setStatus("Importing remote media into storage...");
     setResult(null);
 
     try {
@@ -85,7 +85,7 @@ export default function RemoteUrlImportPanel({ importEnabled, missingConfig = []
           <div className="admin-section-heading">
             <div>
               <p>
-                External media is treated only as an ingestion path. Once imported, the asset lives in Supabase Storage
+                External media is treated only as an ingestion path. Once imported, the asset lives in storage
                 and is managed exactly like a local upload.
               </p>
             </div>
@@ -96,7 +96,7 @@ export default function RemoteUrlImportPanel({ importEnabled, missingConfig = []
           </div>
 
           {!importEnabled ? (
-            <p className="admin-note">Missing configuration: {missingConfig.join(", ") || "Supabase env vars"}.</p>
+            <p className="admin-note">Missing configuration: {missingConfig.join(", ") || "storage settings"}.</p>
           ) : null}
 
           <form className="admin-form-stack" onSubmit={handleSubmit}>

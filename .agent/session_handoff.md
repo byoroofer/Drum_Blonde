@@ -4,51 +4,35 @@ Update this file at the end of each meaningful session so the next agent can con
 
 ## Current Snapshot
 
-- Updated: `2026-04-03T00:00:00-05:00`
+- Updated: `2026-04-06T12:48:23.0821543-05:00`
 - Branch: `main`
-- Latest commit: `aadfdde` — "Reconcile homepage with recovered source and apply premium UI improvements"
-- Session goal: Upgrade fan site UI without destroying the layout; replace disallowed Phase 1 Blueprint homepage.
-- Status: Complete. Build passes clean. Changes are committed but NOT yet pushed/deployed.
+- Latest commit: `7001fa4` - "Reinstate admin login enforcement"
+- Session goal: Rework the admin experience with a persistent sidebar, a dedicated media-library page, cleaner labels, reliable thumbnails, and starred-video-driven homepage rotation.
+- Status: Complete. `/admin` is now a control-panel dashboard, `/admin/media` is the dedicated media library/editor, missing admin thumbnails can be generated on demand, and homepage video ordering now pins the highest-view starred video first.
 
 ## What Changed
 
-- Replaced disallowed `app/page.js` (Phase 1 Blueprint) with the recovered production page.js from `_recovered_5ss2_clean/src/app/page.js`.
-- Replaced `app/layout.js` with the recovered version (corrects site metadata title to "Brooke's Official Hub | Drum Blonde").
-- Applied ~18 targeted CSS improvements to `app/globals.css` (and kept `_recovered_5ss2_clean/src/app/globals.css` in sync):
-  - Hero min-height: 720px → 840px
-  - Hero padding increased for more breathing room
-  - Topbar margin increased
-  - Video column gets more grid weight (1.05fr); hero aside rows asymmetric (3fr / 2fr — spotlight dominates)
-  - Spotlight video card: pink glow border + box-shadow
-  - Status pill dot: `live-pulse` animation added
-  - Hero h2 font-size up to 7rem, tighter line-height (0.88), subtle text-shadow
-  - Section padding increased; section hover border transition
-  - Featured media section gets subtle pink ambient gradient
-  - Section headings slightly larger, more margin
-  - Reel chip hover lift + transition
-  - Link card transition improved; focus-visible ring added
-  - Merch art min-height 190 → 210px
-  - Shop CTA: more intentional gradient + pink border accent
-  - Site footer: darker background, slightly larger padding
-  - New keyframes: `live-pulse`, `section-fade-up`
-  - Ambient blobs: slightly stronger opacity
-  - Feature-rank video column: more dominant ratio (1.1fr / 0.82fr)
-- Added `app/components/` (home-analytics, trackable-link, trackable-video, tracking) — required by page.js imports.
-- Added `lib/` from recovered source — required by `@/lib/media-repo` and `@/lib/supabase-admin` imports.
-- Safety tag: `ui-improvement-baseline` → `90d8fe1` (pre-change baseline, rollback target).
+- Added `app/admin/layout.js` plus a rewritten `components/admin-shell.tsx` so admin pages share a persistent left-side navigation shell.
+- Replaced the monolithic `app/admin/page.js` with a dashboard focused on homepage features, albums, filters, diagnostics, uploads, and settings.
+- Added `app/admin/media/page.js` as the dedicated media-library page with filtering, album chips, tile-size modes, pagination, editor access, and clear `Starred` / `Spotlight` / `Rotation` badges.
+- Updated `lib/media-repo.js` so starred videos form the homepage rotation pool, the highest-view starred video becomes `heroVideo`, and normalized admin rows expose `adminThumbnailUrl`.
+- Added `app/api/admin/media/[id]/thumbnail/route.js` to generate/cache missing admin thumbnails on demand for existing media rows.
+- Restored the missing root-tree remote import endpoint at `app/api/admin/import/remote-url/route.js` so the remote URL panel is functional again.
+- Cleaned up operator-facing admin wording in the upload/import panels and adjusted revalidation paths in `app/admin/actions.js`.
+- Updated `app/page.js` to preserve the homepage order returned by `getHomepageMedia()` instead of re-sorting the rotation pool.
 
 ## Validation
 
-- `git tag ui-improvement-baseline 90d8fe1` — rollback tag created before any edits.
-- `npm run build` — PASS. 0 errors, 0 warnings. 10/10 static pages generated.
-- Compile: 44s clean.
+- `cmd /c npx tsc --noEmit` - PASS.
+- First `cmd /c npm run build` - FAIL. Compiled successfully, then failed during page-data collection with `SyntaxError: Unexpected end of JSON input`.
+- Second `cmd /c npm run build` - PASS.
 
 ## Known Blockers And Risks
 
-- Commit `aadfdde` has not been pushed to origin or deployed to Vercel. The live site does not yet reflect these improvements.
-- Existing unrelated working tree changes still present (`.env.example`, `components/google-photos-picker-panel.tsx`, `core/env.ts`, `core/google-photos-picker.ts`, `scripts/check-env.mjs`) — treat as user-owned, do not touch.
-- `app/admin/(protected)/` and `.agent/` and `AGENTS.md` remain untracked — not touched.
-- The `media_albums` schema-cache warning may still appear during build; it's a non-fatal fallback.
+- No browser-level verification was performed for the new sidebar shell, `/admin/media`, or the updated homepage spotlight ordering; the work is validated by build/type checks only.
+- `data/liveConfig.js` still stores `isLiveOverride` in process memory only. A restart, cold start, or deploy will reset live mode to `false`.
+- Existing unrelated working tree changes still present: `.env.example`, `components/google-photos-picker-panel.tsx`, `core/env.ts`, `core/google-photos-picker.ts`, `scripts/check-env.mjs`.
+- `git status` still shows many untracked files under `_recovered_5ss2_clean/src/`; continue treating the recovered tree and those files as user-owned context unless explicitly asked to reconcile them.
 
 ## Existing Unrelated Working Tree Changes (still present, unstaged)
 
@@ -57,12 +41,18 @@ Update this file at the end of each meaningful session so the next agent can con
 - Modified: `core/env.ts`
 - Modified: `core/google-photos-picker.ts`
 - Modified: `scripts/check-env.mjs`
-- Untracked: `_recovered_5ss2_clean/` (rest of tree), `.agent/`, `AGENTS.md`, `app/admin/(protected)/`
+- Untracked: `_recovered_5ss2_clean/src/*` recovery files, `.agent/`, `AGENTS.md`
+
+## Rollback Steps For Latest Task
+
+1. Remove `app/admin/layout.js`, `app/admin/media/page.js`, `app/api/admin/media/[id]/thumbnail/route.js`, and `app/api/admin/import/remote-url/route.js`.
+2. Restore the previous versions of `components/admin-shell.tsx`, `app/admin/page.js`, `app/admin/actions.js`, `app/admin/live/page.js`, `app/admin/upload-widget.jsx`, `app/admin/google-photos-import-panel.jsx`, `app/admin/remote-url-import-panel.jsx`, `app/globals.css`, `app/page.js`, and `lib/media-repo.js`.
+3. Run `cmd /c npx tsc --noEmit`.
+4. Run `cmd /c npm run build`.
+5. Browser-check `/admin`, `/admin/media`, and `/` to confirm the prior admin and homepage behavior is back.
 
 ## Next Recommended Actions
 
-1. **Deploy**: push `main` to origin — Vercel will auto-deploy `aadfdde` to production.
-2. **Verify**: confirm `drumblonde.tjware.me` renders correctly with the improved UI.
-3. **Google Photos picker**: test the picker end-to-end on the live admin dashboard.
-4. **Schema**: apply `_recovered_5ss2_clean/src/db/schema.sql` via Supabase SQL Editor to resolve the `media_albums` warning.
-5. **Optional next UI pass**: consider adding `section-fade-up` animation via IntersectionObserver on scroll sections for cinematic entrance effects.
+1. Browser-verify `/admin` and `/admin/media` with real data, including starring, hiding, editing, pagination, and missing-thumbnail behavior.
+2. Browser-verify the homepage spotlight ordering so the highest-view starred video is actually leading the public stack.
+3. Keep the Google Photos, `media_albums`, and live-mode persistence follow-ups separate from this admin UX refactor.

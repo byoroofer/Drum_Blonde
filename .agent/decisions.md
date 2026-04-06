@@ -81,3 +81,23 @@ Record durable technical and operational decisions here. Prefer one decision blo
 - Rationale: Restoring the existing auth model is safer and smaller than partially migrating the root tree to the separate `core/auth.ts` Supabase flow during an unrelated fix.
 - Consequence: Unauthenticated access now goes back to `/admin/login`, admin API routes reject missing/invalid cookies, and future auth work must explicitly migrate routes if the Supabase-based system is meant to replace this path.
 - Revisit when: The root admin routes are intentionally migrated off `lib/admin-auth.js` to a different approved auth system.
+
+## 2026-04-06 | Active | Keep the admin dashboard and media library as separate routes under one persistent shell
+
+- Date: `2026-04-06`
+- Status: Active
+- Decision: Use `app/admin/layout.js` plus `components/admin-shell.tsx` for a persistent sidebar, keep `/admin` focused on control-panel summaries/actions, and move the full media grid/editor to `/admin/media`.
+- Context: The previous `/admin` page mixed uploads, filters, albums, diagnostics, and the entire media library/editor into one long monolith, which made navigation and future changes risky.
+- Rationale: A dedicated media route is safer for high-volume browsing and makes the admin surface behave like a real control panel instead of a stacked landing page.
+- Consequence: New admin links and action return targets should prefer `/admin/media` for library-specific work, while dashboard-only controls remain on `/admin`.
+- Revisit when: The admin route map expands into additional dedicated pages or the user asks for a different IA.
+
+## 2026-04-06 | Active | Starred videos are the homepage rotation pool, and the highest-view starred video stays pinned first
+
+- Date: `2026-04-06`
+- Status: Active
+- Decision: `lib/media-repo.js` should treat all starred videos as homepage-rotation candidates and deterministically pin the highest-view starred video into the main spotlight slot before ordering the remaining starred videos.
+- Context: The user wanted the admin star to control live homepage rotation and explicitly requested that the highest-view starred video remain in the lead spotlight position.
+- Rationale: This keeps homepage behavior understandable to operators: star = eligible, highest views among starred = leader.
+- Consequence: Non-starred videos no longer enter the homepage rotation path, and `app/page.js` must preserve the selection order coming from `getHomepageMedia()` instead of re-sorting it.
+- Revisit when: The homepage curation model intentionally introduces manual spotlight overrides or a different ranking rule.

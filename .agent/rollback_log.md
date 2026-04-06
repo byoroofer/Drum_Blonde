@@ -251,13 +251,51 @@ pm run db:setup attempt.
 ## 2026-04-06T11:06:34.5373348-05:00 | Reinstate root admin login enforcement
 
 - Timestamp: `2026-04-06T11:06:34.5373348-05:00`
-- Change summary: Restored real credential/session checks in `lib/admin-auth.js`, made `app/admin/login/page.js` render the login form again for signed-out users, and updated `app/admin/actions.js` so successful sign-in redirects only to `/admin` paths.
+- Change summary: Restored real credential/session checks in `lib/admin-auth.js`, made `app/admin/login/page.js` render the login form again for signed-out users, updated `app/admin/actions.js` so successful sign-in redirects only to `/admin` paths, committed the repair as `7001fa4`, pushed `main`, and confirmed production deployment `https://drum-blonde-5bv2r4q5g-byoroofers-projects.vercel.app` reached `Ready`.
 - Files changed: `lib/admin-auth.js`, `app/admin/login/page.js`, `app/admin/actions.js`, `.agent/architecture_notes.md`, `.agent/project_overview.md`, `.agent/decisions.md`, `.agent/open_issues.md`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
-- Commands run: targeted source audits; `cmd /c npm run build`; `git diff -- lib/admin-auth.js app/admin/login/page.js app/admin/actions.js`
+- Commands run: targeted source audits; `cmd /c npm run build`; `git diff -- lib/admin-auth.js app/admin/login/page.js app/admin/actions.js`; `git commit -m "Reinstate admin login enforcement"`; `git push origin main`; `cmd /c npx vercel ls`
 - Rollback steps:
-  1. Revert the auth helper changes in `lib/admin-auth.js` so `verifyAdminCredentials()`, `isAdminAuthenticated()`, `requireAdmin()`, and `isAdminRequest()` return to the previous behavior.
-  2. Restore the unconditional `redirect("/admin")` at the top of `app/admin/login/page.js`.
-  3. Remove the `next` redirect handling added to `app/admin/actions.js`.
-  4. Re-run `npm run build`.
-  5. If these changes were deployed, push the revert and confirm `/admin` is back to the prior open-access behavior.
-- Rollback verification: Confirm unauthenticated requests can once again load `/admin` directly, confirm `/admin/login` no longer renders a sign-in form, and confirm the production build still passes.
+  1. `git revert 7001fa4`
+  2. `git push origin main`
+  3. Wait for the replacement Vercel production deployment to reach `Ready`.
+  4. Confirm `/admin` is back to the prior open-access behavior only if that rollback is intentionally desired.
+- Rollback verification: Confirm the replacement deployment is `Ready`, confirm unauthenticated requests can once again load `/admin` directly only after the revert, and confirm the production build still passes.
+
+## 2026-04-06T12:29:18.3610850-05:00 | Correct Vercel production admin credentials and redeploy
+
+- Timestamp: `2026-04-06T12:29:18.3610850-05:00`
+- Change summary: Diagnosed the live `invalid` login error as a Vercel Production env mismatch, replaced the broken `ADMIN_USERNAME` and `ADMIN_PASSWORD` values in Vercel, redeployed the latest production deployment without using the dirty local workspace, confirmed `https://drum-blonde-qupk2oth0-byoroofers-projects.vercel.app` reached `Ready`, and removed the temporary pulled env file.
+- Files changed: `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`, `.agent/open_issues.md`
+- Commands run: local credential probes; `npx vercel env ls`; `npx vercel env pull`; `npx vercel env rm`; `npx vercel env add`; `npx vercel redeploy`; `npx vercel ls`; `Remove-Item -LiteralPath .env.vercel-prod`
+- Rollback steps:
+  1. Replace the current Production `ADMIN_USERNAME` and `ADMIN_PASSWORD` values in Vercel with the previous values only if intentionally undoing the login repair.
+  2. Redeploy production from the current live deployment.
+  3. Wait for the replacement production deployment to reach `Ready`.
+  4. Re-test `/admin` and confirm the login behavior matches the intentionally restored env values.
+- Rollback verification: Confirm the replacement deployment is `Ready`, confirm the live login behavior matches the reverted env values, and confirm no temporary env dump file remains in the workspace.
+
+## 2026-04-06T12:46:55.2249413-05:00 | Add admin video thumbnail fallback placeholder
+
+- Timestamp: `2026-04-06T12:46:55.2249413-05:00`
+- Change summary: Added a generated SVG fallback thumbnail for video assets in `lib/media-repo.js` and updated `app/api/admin/media/[id]/thumbnail/route.js` to return that placeholder image when poster generation is unavailable instead of returning a broken thumbnail response.
+- Files changed: `lib/media-repo.js`, `app/api/admin/media/[id]/thumbnail/route.js`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/open_issues.md`, `.agent/session_handoff.md`
+- Commands run: targeted source audits; `cmd /c npm run build`; `cmd /c npx tsc --noEmit`
+- Rollback steps:
+  1. Revert the fallback-thumbnail changes in `lib/media-repo.js` and `app/api/admin/media/[id]/thumbnail/route.js`.
+  2. Run `cmd /c npx tsc --noEmit`.
+  3. Reopen `/admin/media` and confirm videos no longer show the generated placeholder thumbnail.
+- Rollback verification: Confirm video tiles in `/admin/media` fall back to the old broken/empty preview behavior only if that rollback is intentionally desired, and confirm no other media rendering changed.
+
+## 2026-04-06T12:48:23.0821543-05:00 | Split admin dashboard from media library and refactor starred-video rotation
+
+- Timestamp: `2026-04-06T12:48:23.0821543-05:00`
+- Change summary: Added a persistent admin sidebar shell, moved the full media library/editor to `/admin/media`, restored the missing remote URL import route, added on-demand admin thumbnail backfill via `/api/admin/media/[id]/thumbnail`, cleaned up admin labels, and changed homepage selection so starred videos drive rotation with the highest-view starred video pinned first.
+- Files changed: `app/admin/layout.js`, `components/admin-shell.tsx`, `app/admin/page.js`, `app/admin/media/page.js`, `app/admin/actions.js`, `app/admin/live/page.js`, `app/admin/upload-widget.jsx`, `app/admin/google-photos-import-panel.jsx`, `app/admin/remote-url-import-panel.jsx`, `app/api/admin/media/[id]/thumbnail/route.js`, `app/api/admin/import/remote-url/route.js`, `app/globals.css`, `app/page.js`, `lib/media-repo.js`, `.agent/project_overview.md`, `.agent/architecture_notes.md`, `.agent/decisions.md`, `.agent/open_issues.md`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: targeted source audits; `cmd /c npx tsc --noEmit`; `cmd /c npm run build`
+- Rollback steps:
+  1. Remove `app/admin/layout.js`, `app/admin/media/page.js`, `app/api/admin/media/[id]/thumbnail/route.js`, and `app/api/admin/import/remote-url/route.js`.
+  2. Restore the previous versions of `components/admin-shell.tsx`, `app/admin/page.js`, `app/admin/actions.js`, `app/admin/live/page.js`, `app/admin/upload-widget.jsx`, `app/admin/google-photos-import-panel.jsx`, `app/admin/remote-url-import-panel.jsx`, `app/globals.css`, `app/page.js`, and `lib/media-repo.js`.
+  3. Run `cmd /c npx tsc --noEmit`.
+  4. Run `cmd /c npm run build`.
+  5. Browser-check `/admin`, `/admin/media`, and `/` to confirm the prior admin and homepage behavior is back.
+- Rollback verification: Confirm the admin sidebar is gone, the media library is back inside `/admin`, the homepage no longer uses the new pinned-starred-video ordering, and both validation commands pass after the revert.

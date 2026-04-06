@@ -15,7 +15,9 @@ Last updated: `2026-04-06T11:06:34.5373348-05:00`
 - Root `app/page.js` is now the recovered-style homepage with a minimal conditional live banner wired to `data/liveConfig.js`.
 - A public `/live` route now exists for Twitch streaming embeds, and `/admin/live` provides a protected manual live-mode console.
 - Root `/admin` and `/api/admin/*` now rely on the restored env-backed login flow in `lib/admin-auth.js`; the login screen should render again for unauthenticated access.
+- Root admin now uses a persistent sidebar layout, and the media library lives at `/admin/media` instead of being embedded in the main dashboard route.
 - Homepage media selection now hard-gates on `featuredHome === true`, so only star-marked assets are eligible for homepage rotation.
+- Homepage video rotation is now driven by starred videos only, with the highest-view starred video pinned into the main spotlight slot.
 - A public `/gallery` route now exists so image thumbnails live on a separate page instead of competing with the homepage video stack.
 - Production-facing fixes should still be validated against the recovered source tree before build or deploy activity.
 - Current production deploy alias: `https://drum-blonde.vercel.app` -> `https://drum-blonde-jxc5xdube-byoroofers-projects.vercel.app`.
@@ -53,6 +55,7 @@ Last updated: `2026-04-06T11:06:34.5373348-05:00`
 - Optional `OPENAI_API_KEY` support exists for smart-import enrichment paths.
 - Twitch is embedded directly on `/live`; no persistent stream-state backend exists yet.
 - Root `lib/media-repo.js` now includes best-effort thumbnail generation with `sharp` for images and `ffmpeg` frame capture for videos.
+- `app/api/admin/media/[id]/thumbnail/route.js` can now regenerate and cache missing admin thumbnails on demand for existing media rows.
 
 ## Current Constraints
 

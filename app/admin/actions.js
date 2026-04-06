@@ -105,6 +105,8 @@ export async function updateMediaAction(formData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
+  revalidatePath("/admin/media");
+  revalidatePath("/gallery");
   redirect(buildAdminRedirectUrl(returnTo, { save: "success", media: id, reason: null }));
 }
 
@@ -129,6 +131,7 @@ export async function createAlbumAction(formData) {
   }
 
   revalidatePath("/admin");
+  revalidatePath("/admin/media");
   redirect(buildAdminRedirectUrl(returnTo, { save: "album", reason: null }));
 }
 
@@ -153,6 +156,7 @@ export async function toggleFeaturedHomeAction(formData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
+  revalidatePath("/admin/media");
   redirect(buildAdminRedirectUrl(returnTo, { save: featuredHome ? "featured" : "unfeatured", media: id, reason: null }));
 }
 
@@ -177,6 +181,7 @@ export async function toggleHiddenAction(formData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
+  revalidatePath("/admin/media");
   redirect(buildAdminRedirectUrl(returnTo, { save: isHidden ? "hidden" : "unhidden", media: id, reason: null }));
 }
 
@@ -200,6 +205,8 @@ export async function deleteMediaAction(formData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
+  revalidatePath("/admin/media");
+  revalidatePath("/gallery");
   redirect(buildAdminRedirectUrl(returnTo, { save: "deleted", media: id, edit: null, reason: null }));
 }
 
@@ -227,6 +234,7 @@ export async function updateFilterConfigAction(formData) {
   }
 
   revalidatePath("/admin");
+  revalidatePath("/admin/media");
   redirect(buildAdminRedirectUrl(returnTo, { save: "config", reason: null }));
 }
 
@@ -238,6 +246,8 @@ export async function toggleFeaturedHomeSilent(formData) {
   await updateMediaAsset({ id, featuredHome });
   revalidatePath("/");
   revalidatePath("/admin");
+  revalidatePath("/admin/media");
+  revalidatePath("/gallery");
 }
 
 export async function toggleHiddenSilent(formData) {
@@ -247,6 +257,7 @@ export async function toggleHiddenSilent(formData) {
   await updateMediaAsset({ id, isHidden });
   revalidatePath("/");
   revalidatePath("/admin");
+  revalidatePath("/admin/media");
 }
 
 export async function deleteMediaSilent(formData) {
@@ -255,4 +266,6 @@ export async function deleteMediaSilent(formData) {
   await deleteMediaAsset(id);
   revalidatePath("/");
   revalidatePath("/admin");
+  revalidatePath("/admin/media");
+  revalidatePath("/gallery");
 }

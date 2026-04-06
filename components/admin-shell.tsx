@@ -1,50 +1,93 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 interface AdminShellProps {
-  user: {
-    displayName: string;
-    email: string;
-    mode: string;
-  };
   children: ReactNode;
 }
 
-const tabs = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin?tab=library", label: "Library" },
-  { href: "/admin?tab=approvals", label: "Approvals" },
-  { href: "/admin?tab=schedule", label: "Schedule" },
-  { href: "/admin?tab=logs", label: "Logs" },
-  { href: "/admin?tab=settings", label: "Settings" }
+const navGroups = [
+  {
+    title: "Overview",
+    items: [
+      { href: "/admin", label: "Dashboard" },
+      { href: "/admin/media", label: "Media Library" },
+      { href: "/admin#homepage-features", label: "Homepage Features" },
+      { href: "/admin/live", label: "Live Control" }
+    ]
+  },
+  {
+    title: "Library Control",
+    items: [
+      { href: "/admin#albums", label: "Albums" },
+      { href: "/admin#filters", label: "Filters" },
+      { href: "/admin#overrides", label: "Overrides" },
+      { href: "/admin#visibility", label: "Visibility" }
+    ]
+  },
+  {
+    title: "System",
+    items: [
+      { href: "/admin#diagnostics", label: "Diagnostics" },
+      { href: "/admin#settings", label: "Settings" }
+    ]
+  }
 ];
 
-export function AdminShell({ user, children }: AdminShellProps) {
+function isActive(pathname: string, href: string) {
+  const [targetPath] = href.split("#");
+  if (!targetPath) {
+    return false;
+  }
+
+  if (targetPath === "/admin") {
+    return pathname === "/admin";
+  }
+
+  return pathname === targetPath;
+}
+
+export function AdminShell({ children }: AdminShellProps) {
   const pathname = usePathname();
 
+  if (pathname === "/admin/login") {
+    return <>{children}</>;
+  }
+
   return (
-    <div className="dashboard-shell">
-      <aside className="dashboard-rail">
-        <div className="brand-stack">
-          <span className="brand-mark">BD</span>
+    <div className="admin-app-shell">
+      <aside className="admin-sidebar">
+        <div className="admin-sidebar__brand">
+          <span className="admin-sidebar__mark">DB</span>
           <div>
-            <strong>Brooke Distribution</strong>
-            <p>{user.mode === "demo" ? "Demo mode" : user.email}</p>
+            <strong>Admin Control Panel</strong>
+            <p>Drum Blonde media operations</p>
           </div>
         </div>
-        <nav className="rail-nav" aria-label="Admin navigation">
-          {tabs.map((tab) => (
-            <Link key={tab.href} href={tab.href} className={pathname === "/admin" && tab.href === "/admin" ? "rail-link rail-link--active" : "rail-link"}>
-              {tab.label}
-            </Link>
+
+        <nav className="admin-sidebar__nav" aria-label="Admin navigation">
+          {navGroups.map((group) => (
+            <div key={group.title} className="admin-sidebar__group">
+              <p className="admin-sidebar__group-label">{group.title}</p>
+              <div className="admin-sidebar__links">
+                {group.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`admin-sidebar__link${isActive(pathname, item.href) ? " admin-sidebar__link--active" : ""}`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
       </aside>
-      <div className="dashboard-main">{children}</div>
+
+      <div className="admin-app-shell__content">{children}</div>
     </div>
   );
 }
-
