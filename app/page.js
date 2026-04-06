@@ -1,6 +1,7 @@
 import HomeAnalytics from "@/app/components/home-analytics";
 import TrackableLink from "@/app/components/trackable-link";
 import TrackableVideo from "@/app/components/trackable-video";
+import { getLiveConfig } from "@/data/liveConfig";
 import { siteData } from "@/data/siteData";
 import { getHomepageMedia } from "@/lib/media-repo";
 
@@ -304,6 +305,7 @@ export default async function HomePage() {
     featuredMerch,
     shop
   } = siteData;
+  const liveConfig = getLiveConfig();
 
   let media = buildStaticHomepageMedia();
 
@@ -336,6 +338,30 @@ export default async function HomePage() {
 
   return (
     <main className="page-shell">
+      {liveConfig.isLiveOverride ? (
+        <a
+          href="/live"
+          style={{
+            display: "block",
+            margin: "0 auto 1rem",
+            padding: "0.8rem 1rem",
+            maxWidth: "min(1200px, calc(100% - 2rem))",
+            border: "1px solid rgba(255, 77, 141, 0.35)",
+            borderRadius: "999px",
+            background: "linear-gradient(90deg, rgba(255, 77, 141, 0.18), rgba(145, 70, 255, 0.22))",
+            color: "inherit",
+            textDecoration: "none",
+            textAlign: "center",
+            fontSize: "0.86rem",
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            boxShadow: "0 18px 40px rgba(9, 6, 18, 0.28)"
+          }}
+        >
+          🔴 LIVE NOW — Watch Brooke
+        </a>
+      ) : null}
       <HomeAnalytics mediaIds={[...new Set(trackedMediaIds)]} />
       <div className="ambient ambient--one" aria-hidden="true" />
       <div className="ambient ambient--two" aria-hidden="true" />
