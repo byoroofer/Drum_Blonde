@@ -2,14 +2,6 @@
 
 Track unresolved bugs, risks, and follow-ups. Close or update entries when the state changes.
 
-## ISSUE-2026-04-01-001 | Root homepage diverges from approved production baseline
-
-- Status: Open
-- Severity: High
-- Context: Root `app/page.js` is the disallowed `Phase 1 Blueprint` homepage, while the approved production recovery baseline lives at `D:\Drum_Blonde\_recovered_5ss2_clean\src`.
-- Risk: A careless build or deploy from the root tree could ship the wrong homepage.
-- Next action: Reconcile homepage and production-facing state against the recovered baseline before any future deploys from the root tree.
-
 ## ISSUE-2026-04-01-002 | No dedicated test or lint script in the root repo
 
 - Status: Open
@@ -22,7 +14,7 @@ Track unresolved bugs, risks, and follow-ups. Close or update entries when the s
 
 - Status: Open
 - Severity: Medium
-- Context: `git status --short` showed pre-existing changes in `.env.example`, `components/google-photos-picker-panel.tsx`, `core/env.ts`, `core/google-photos-picker.ts`, `scripts/check-env.mjs`, plus untracked `_recovered_5ss2_clean/`.
+- Context: `git status --short` showed pre-existing changes in `.env.example`, `components/google-photos-picker-panel.tsx`, `core/env.ts`, `core/google-photos-picker.ts`, `scripts/check-env.mjs`, plus many user-owned recovered-source files under `_recovered_5ss2_clean/src/`.
 - Risk: Future agents could accidentally overwrite or revert user work while handling unrelated tasks.
 - Next action: Treat those files as user-owned changes unless the user explicitly asks to modify them.
 
@@ -42,14 +34,18 @@ Track unresolved bugs, risks, and follow-ups. Close or update entries when the s
 - Risk: The remaining uncertainty is now end-to-end browser behavior on the public production URL, not the OAuth scope itself.
 - Next action: Test the picker on the public production site. If it succeeds, this issue can be downgraded or closed.
 
-## ISSUE-2026-04-01-001 | UPDATE 2026-04-03
-
-- Status: **Resolved** — root `app/page.js` now contains the recovered production homepage. Phase 1 Blueprint has been replaced.
-
-## ISSUE-2026-04-03-001 | Root tree not yet deployed to production
+## ISSUE-2026-04-03-001 | Root tree deployment verification still needs browser confirmation
 
 - Status: Open
-- Severity: Medium
-- Context: The improved root tree builds clean locally (commit `aadfdde`) but has not yet been pushed to Vercel production. The live `drumblonde.tjware.me` still reflects the last deployed recovered-source build.
-- Risk: Improvements are local-only until deployed.
-- Next action: Push commit `aadfdde` to origin main → Vercel will auto-deploy. Then verify drumblonde.tjware.me renders correctly.
+- Severity: Low
+- Context: The root tree was already live on production, and the `2026-04-06` admin-login repair restores auth gating in code. Deployment/build status can be confirmed separately, but no browser-level verification of `drumblonde.tjware.me`, `/gallery`, `/live`, the admin login screen, or post-login admin behavior was performed in this session.
+- Risk: Production may be deployed yet still needs a real browser pass to confirm unauthenticated `/admin` access redirects to `/admin/login`, valid sign-in reaches the dashboard, and the existing homepage/media behavior remains intact.
+- Next action: Open the live site in a browser and confirm the homepage shows only star-marked media, thumbnails render correctly, `/gallery` loads, `/live` behaves as expected, and `/admin` now requires login end-to-end.
+
+## ISSUE-2026-04-05-001 | Live-mode override is temporary in-memory state only
+
+- Status: Open
+- Severity: Low
+- Context: `data/liveConfig.js` stores `isLiveOverride` in process memory so `/admin/live` can toggle the homepage banner and `/live` state without touching existing admin actions or persistence layers.
+- Risk: The toggle resets on restart, deploy, or serverless cold start, so operators cannot rely on it as a durable live-state flag.
+- Next action: Leave as-is unless the user asks for persistent live-state storage or automatic Twitch status detection.

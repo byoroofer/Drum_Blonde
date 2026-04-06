@@ -1,11 +1,14 @@
 # Architecture Notes
 
-Last updated: `2026-04-01T15:19:48.1870648-05:00`
+Last updated: `2026-04-06T11:06:34.5373348-05:00`
 
 ## Top-Level Shape
 
-- `app/page.js` is the current root homepage implementation. It is a `Phase 1 Blueprint` variant and is not approved for production.
-- `app/admin/` contains the operator dashboard UI, review forms, and server-side actions.
+- `app/page.js` is the recovered-style homepage and now reads `data/liveConfig.js` to prepend a thin `/live` banner when manual live mode is enabled.
+- `app/page.js` now keeps admin access out of the topbar; the only public admin entry point is a subdued footer link.
+- `app/gallery/page.js` is the separate public image-thumbnails page and pulls visible image assets from `getHomepageMedia()`.
+- `app/live/page.js` is a standalone Twitch stream surface with Twitch player/chat embeds and local page-scoped styling.
+- `app/admin/` contains the operator dashboard UI, review forms, server-side actions, and a new protected `/admin/live` console.
 - `app/api/jobs/run/route.js` is the protected worker endpoint.
 - `app/api/google-photos/picker/*` exposes picker session and import routes.
 - `_recovered_5ss2_clean/src/app/admin/` is the current production admin baseline and now includes its own picker-based Google Photos import panel and `/api/admin/google-photos/picker/*` routes.
@@ -17,6 +20,9 @@ Last updated: `2026-04-01T15:19:48.1870648-05:00`
 - `core/publishing.ts` resolves execution mode and builds manual-handoff payloads. Current MVP behavior remains manual-first unless live publishing and a valid connected account are both present.
 - `core/platforms.ts` defines platform policy and default execution posture.
 - `core/google-photos-picker.ts` and `core/video.ts` handle import and media inspection helper work.
+- `data/liveConfig.js` is the current live-stream control point. It exposes `twitchChannel`, `showChat`, `isLiveOverride`, plus helper functions backed by a `globalThis` in-memory store.
+- `lib/admin-auth.js` is the active root-tree admin auth control point. `/admin`, `/admin/live`, and `/api/admin/*` use its env-backed cookie session checks; the separate `core/auth.ts` Supabase flow exists in the repo but is not wired into these routes.
+- `lib/media-repo.js` is the homepage curation control point. `buildHomepageSelection()` now requires `featuredHome === true` for both image and video homepage candidates before slot/smart-score ordering is applied.
 - `_recovered_5ss2_clean/src/lib/google-photos-picker.js` is the recovered production helper that creates picker sessions, polls picked items, downloads selected media, and hands files off to `_recovered_5ss2_clean/src/lib/media-repo.js`.
 - `db/schema.sql` is the source schema for local DB setup.
 
@@ -34,6 +40,9 @@ Last updated: `2026-04-01T15:19:48.1870648-05:00`
 - Missing Supabase env vars should degrade to demo mode, not a broken dashboard.
 - Production homepage recovery work must treat `D:\Drum_Blonde\_recovered_5ss2_clean\src` as authoritative until the user says otherwise.
 - The recovered production Google Photos path now depends on Google Picker API credentials that include `photospicker.mediaitems.readonly`.
+- The current live-mode toggle is intentionally temporary and process-local; it is not persisted to Supabase, files, or existing admin actions.
+- Root admin access must fail closed when `ADMIN_*` env vars are missing or the signed `drum_blonde_admin` cookie is absent/invalid; `lib/admin-auth.js` should not be left in a permissive stub state.
+- Thumbnail generation in the root media engine is best-effort and should not block ingestion; homepage/admin preview rendering expects dedicated thumbnail paths rather than falling back to raw video files.
 
 ## Coupling and Caution Areas
 

@@ -51,3 +51,33 @@ Record durable technical and operational decisions here. Prefer one decision blo
 - Rationale: Picker sessions match Google's supported selection flow and eliminate the brittle library-wide search dependency from the recovered admin UI.
 - Consequence: Production Google Photos success now depends on a token minted with `https://www.googleapis.com/auth/photospicker.mediaitems.readonly`; the old library-search routes are no longer the intended admin path.
 - Revisit when: The recovered tree is reconciled with the main root repo or the Google Photos integration model changes again.
+
+## 2026-04-05 | Active | Keep live-stream state temporary and isolated until persistence is explicitly requested
+
+- Date: `2026-04-05`
+- Status: Active
+- Decision: The new live-stream feature should use `data/liveConfig.js` as a temporary in-memory control surface instead of modifying existing admin actions, media storage, or database-backed config.
+- Context: The live feature request explicitly prohibited touching `media-repo.js`, existing admin actions, redirects, new dependencies, or Supabase-backed persistence for now.
+- Rationale: A process-local toggle is the smallest safe implementation that fits the repo constraints and keeps the feature additive.
+- Consequence: `isLiveOverride` can be flipped from `/admin/live`, but it resets on process restart, deploy, or cold start and should not be treated as durable operational state.
+- Revisit when: The user asks for persistent live-state management, scheduling, or real stream-status automation.
+
+## 2026-04-06 | Active | Homepage media exposure must be gated by the admin star
+
+- Date: `2026-04-06`
+- Status: Active
+- Decision: Homepage media rotation must only consider assets with `featuredHome === true`; active status, hidden state, slot, and smart score apply only after that gate.
+- Context: The homepage query was still allowing non-starred assets onto the live homepage whenever they were active, which made the admin star a soft ranking hint instead of the explicit homepage control the operator expects.
+- Rationale: The star toggle in admin needs to be the single clear control for homepage eligibility.
+- Consequence: Unstarred images and videos are now excluded from homepage rotation even if they are approved and active.
+- Revisit when: The homepage curation model intentionally expands beyond the explicit star toggle.
+
+## 2026-04-06 | Active | Root admin must use env-backed cookie auth until a deliberate migration replaces it
+
+- Date: `2026-04-06`
+- Status: Active
+- Decision: Keep the current root-tree admin surface on `lib/admin-auth.js` with signed-cookie session checks and credential validation from `ADMIN_*` env vars; do not leave `/admin` or `/api/admin/*` in a permissive stub state.
+- Context: The wired admin routes were using `lib/admin-auth.js`, but its guard functions had been replaced with unconditional `true` returns and `app/admin/login/page.js` was force-redirecting to `/admin`, which removed effective authentication from the live admin surface.
+- Rationale: Restoring the existing auth model is safer and smaller than partially migrating the root tree to the separate `core/auth.ts` Supabase flow during an unrelated fix.
+- Consequence: Unauthenticated access now goes back to `/admin/login`, admin API routes reject missing/invalid cookies, and future auth work must explicitly migrate routes if the Supabase-based system is meant to replace this path.
+- Revisit when: The root admin routes are intentionally migrated off `lib/admin-auth.js` to a different approved auth system.

@@ -47,6 +47,7 @@ export async function loginAction(formData) {
     redirect("/admin/login?error=setup");
   }
 
+  const next = normalizeAdminReturnTo(formData.get("next"));
   const username = String(formData.get("username") || "").trim();
   const password = String(formData.get("password") || "");
 
@@ -61,7 +62,7 @@ export async function loginAction(formData) {
 
   await clearFailedLoginAttempts(username);
   await createAdminSession();
-  redirect("/admin");
+  redirect(next);
 }
 
 export async function logoutAction() {

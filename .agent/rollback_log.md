@@ -206,3 +206,58 @@ pm run db:setup attempt.
   2. `git checkout ui-improvement-baseline -- app/page.js app/layout.js app/globals.css && git rm -r app/components lib/` then commit
   3. The original Phase 1 Blueprint page.js is in git history at `90d8fe1:app/page.js`
 - Rollback verification: `npm run build` should pass; homepage should revert to the Blueprint (but Blueprint is disallowed for deploy)
+
+## 2026-04-05T19:18:32.8281029-05:00 | Add Twitch live page and admin live console
+
+- Timestamp: `2026-04-05T19:18:32.8281029-05:00`
+- Change summary: Added `data/liveConfig.js`, new `/live` and `/admin/live` routes, and a conditional homepage live banner in `app/page.js`. The live-mode toggle is temporary in-memory state only.
+- Files changed: `app/page.js`, `app/live/page.js`, `app/admin/live/page.js`, `data/liveConfig.js`, `.agent/project_overview.md`, `.agent/architecture_notes.md`, `.agent/work_log.md`, `.agent/decisions.md`, `.agent/rollback_log.md`, `.agent/open_issues.md`, `.agent/session_handoff.md`
+- Commands run: Targeted source reads; `apply_patch`; `cmd /c npm run build`
+- Rollback steps:
+  1. Delete `app/live/page.js`.
+  2. Delete `app/admin/live/page.js`.
+  3. Delete `data/liveConfig.js`.
+  4. Remove the `getLiveConfig` import and conditional live-strip block from `app/page.js`.
+  5. Re-run `cmd /c npm run build` to confirm the site returns to the pre-live-feature state.
+  6. Remove or supersede this timestamped entry from the `.agent` files if the feature is backed out.
+- Rollback verification: Confirm `/live` and `/admin/live` return 404 locally, confirm the homepage no longer renders the live strip, and confirm `npm run build` passes cleanly.
+
+## 2026-04-06T08:18:00.5444898-05:00 | Gate homepage media by admin star and deploy main
+
+- Timestamp: `2026-04-06T08:18:00.5444898-05:00`
+- Change summary: Added a hard `featuredHome === true` gate to homepage media selection in the root media engine, mirrored the same rule in the recovered baseline copy, committed the live/homepage bundle as `4967ab8`, pushed `main`, and confirmed Vercel production deployment `https://drum-blonde-c0c1bl5hn-byoroofers-projects.vercel.app` reached `Ready`.
+- Files changed: `lib/media-repo.js`, `_recovered_5ss2_clean/src/lib/media-repo.js`, `.agent/project_overview.md`, `.agent/architecture_notes.md`, `.agent/decisions.md`, `.agent/open_issues.md`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: `cmd /c npm run build`; `git add app/page.js app/live/page.js app/admin/live/page.js data/liveConfig.js lib/media-repo.js`; `git commit -m "Add live page and require featured media on homepage"`; `git push origin main`; `cmd /c npx vercel ls`
+- Rollback steps:
+  1. `git revert 4967ab8`
+  2. `git push origin main`
+  3. Confirm the next Vercel production deployment becomes the active ready deployment.
+  4. If only the homepage filter needs to be reversed locally, remove the `featuredHome === true` checks from `buildHomepageSelection()` in `lib/media-repo.js`.
+- Rollback verification: Confirm production no longer enforces featured-only homepage media, confirm the live homepage behavior matches the reverted commit set, and confirm Vercel shows the replacement deployment as `Ready`.
+
+## 2026-04-06T09:05:00-05:00 | Add gallery page and quiet footer admin login
+
+- Timestamp: `2026-04-06T09:05:00-05:00`
+- Change summary: Added `app/gallery/page.js`, linked it from the homepage, removed the topbar admin-login CTA, replaced the footer admin login with a subdued text-style link, committed as `57cf145`, pushed `main`, and confirmed production deployment `https://drum-blonde-or6ms15an-byoroofers-projects.vercel.app` reached `Ready`.
+- Files changed: `app/page.js`, `app/gallery/page.js`, `.agent/project_overview.md`, `.agent/architecture_notes.md`, `.agent/open_issues.md`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: `npm run build`; `git add app/page.js app/gallery/page.js`; `git commit -m "Add gallery page and quiet admin login link"`; `git push origin main`; `npx vercel ls`
+- Rollback steps:
+  1. `git revert 57cf145`
+  2. `git push origin main`
+  3. Wait for the replacement Vercel production deployment to reach `Ready`.
+  4. Re-test the homepage header/footer and confirm `/gallery` no longer resolves.
+- Rollback verification: Confirm the homepage topbar admin link is restored, confirm the separate gallery page is gone, and confirm Vercel shows the replacement deployment as `Ready`.
+
+## 2026-04-06T11:06:34.5373348-05:00 | Reinstate root admin login enforcement
+
+- Timestamp: `2026-04-06T11:06:34.5373348-05:00`
+- Change summary: Restored real credential/session checks in `lib/admin-auth.js`, made `app/admin/login/page.js` render the login form again for signed-out users, and updated `app/admin/actions.js` so successful sign-in redirects only to `/admin` paths.
+- Files changed: `lib/admin-auth.js`, `app/admin/login/page.js`, `app/admin/actions.js`, `.agent/architecture_notes.md`, `.agent/project_overview.md`, `.agent/decisions.md`, `.agent/open_issues.md`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: targeted source audits; `cmd /c npm run build`; `git diff -- lib/admin-auth.js app/admin/login/page.js app/admin/actions.js`
+- Rollback steps:
+  1. Revert the auth helper changes in `lib/admin-auth.js` so `verifyAdminCredentials()`, `isAdminAuthenticated()`, `requireAdmin()`, and `isAdminRequest()` return to the previous behavior.
+  2. Restore the unconditional `redirect("/admin")` at the top of `app/admin/login/page.js`.
+  3. Remove the `next` redirect handling added to `app/admin/actions.js`.
+  4. Re-run `npm run build`.
+  5. If these changes were deployed, push the revert and confirm `/admin` is back to the prior open-access behavior.
+- Rollback verification: Confirm unauthenticated requests can once again load `/admin` directly, confirm `/admin/login` no longer renders a sign-in form, and confirm the production build still passes.

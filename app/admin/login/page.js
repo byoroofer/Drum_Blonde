@@ -1,15 +1,25 @@
 import Link from "next/link";
 import { loginAction } from "@/app/admin/actions";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { hasAdminCredentials } from "@/lib/env";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
+function normalizeAdminNext(value) {
+  const next = String(value || "").trim();
+  return next.startsWith("/admin") ? next : "/admin";
+}
+
 export default async function AdminLoginPage({ searchParams }) {
-  redirect("/admin");
   const params = await searchParams;
   const error = params?.error || "";
+  const next = normalizeAdminNext(params?.next);
   const configured = hasAdminCredentials();
+
+  if (configured && (await isAdminAuthenticated())) {
+    redirect(next);
+  }
 
   return (
     <main className="admin-shell admin-shell--login">
@@ -44,6 +54,8 @@ export default async function AdminLoginPage({ searchParams }) {
         ) : null}
 
         <form action={loginAction} className="admin-form-stack">
+          <input type="hidden" name="next" value={next} />
+
           <label className="admin-field">
             <span>Username</span>
             <input name="username" autoComplete="username" />

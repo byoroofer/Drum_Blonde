@@ -250,3 +250,55 @@ pm run db:setup in recovered source.
 - Rationale: Preserve layout/content model exactly; improve visual quality (video prominence, typography scale, micro-animations, hover transitions, spacing rhythm, cinematic mood).
 - Rollback plan: `git revert aadfdde` or `git checkout ui-improvement-baseline -- app/page.js app/layout.js app/globals.css` then delete `app/components/` and `lib/`.
 - Next steps: Deploy to Vercel from root tree. Verify live against drumblonde.tjware.me.
+
+## 2026-04-05T19:18:32.8281029-05:00 | Add Twitch live page, homepage banner, and admin live console
+
+- Timestamp: `2026-04-05T19:18:32.8281029-05:00`
+- Task: Add a public Twitch live page, a conditional homepage live strip, and a protected admin console to toggle live mode without touching the media system.
+- Context: The user requested a minimal additive live-stream feature for the existing Next.js 15 App Router project. Repo rules required preserving the recovered homepage baseline and avoiding media/admin-action changes.
+- Files changed: `app/page.js`, `app/live/page.js`, `app/admin/live/page.js`, `data/liveConfig.js`, `.agent/project_overview.md`, `.agent/architecture_notes.md`, `.agent/work_log.md`, `.agent/decisions.md`, `.agent/rollback_log.md`, `.agent/open_issues.md`, `.agent/session_handoff.md`
+- Commands run: `Get-Content -Raw AGENTS.md`; `Get-Content -Raw .agent/session_handoff.md`; targeted `rg`/`Get-Content` reads across `app/`, `data/`, `lib/`; `Get-Date -Format o`; `git rev-parse --short HEAD`; `git log -1 --pretty=%s`; `git status --short`; `git diff -- app/page.js app/live/page.js app/admin/live/page.js data/liveConfig.js`; `cmd /c npm run build`
+- Errors encountered: Initial homepage banner attempt used `TrackableLink` with an inline `style` prop, but `app/components/trackable-link.jsx` does not forward arbitrary props. The banner was switched to a plain anchor. `git status` also emitted non-blocking warnings about `C:\Users\warep/.config/git/ignore` permissions.
+- Fix or decision: Added `data/liveConfig.js` as a temporary in-memory control surface, added `/live` with Twitch player/chat embeds for `drumdrumbrooke`, updated `app/page.js` to show a thin live strip only when `isLiveOverride` is true, and added `/admin/live` with `requireAdmin()` plus a local server action that toggles live mode and revalidates `/`, `/live`, and `/admin/live`.
+- Rationale: This satisfies the requested streaming feature set with the fewest moving parts and without modifying `media-repo.js`, existing admin actions, or global styling files.
+- Rollback plan: Remove `app/live/page.js`, `app/admin/live/page.js`, and `data/liveConfig.js`; remove the live-banner import/render block from `app/page.js`; re-run `npm run build`; then delete or supersede the matching `.agent` notes.
+- Next steps: If the user wants the live toggle to survive restarts or deploys, move `isLiveOverride` into a persistent store later. Otherwise the current implementation is ready for a normal code review or deploy flow.
+
+## 2026-04-06T08:18:00.5444898-05:00 | Require featured media on homepage and deploy root tree
+
+- Timestamp: `2026-04-06T08:18:00.5444898-05:00`
+- Task: Ensure only admin-starred media can appear on the homepage, ship the live-stream feature, and push the root tree to production so the thumbnail-generation fixes in current history are deployed.
+- Context: The user reported that non-starred media could still appear on the live homepage and that thumbnails were still missing on the deployed site. The root branch already contained recent thumbnail-generation commits, but they had not been deployed with the live-stream feature.
+- Files changed: `lib/media-repo.js`, `_recovered_5ss2_clean/src/lib/media-repo.js`, `.agent/project_overview.md`, `.agent/architecture_notes.md`, `.agent/decisions.md`, `.agent/open_issues.md`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: targeted `rg`/`Get-Content` reads across root and recovered `media-repo.js`, `app/admin/page.js`, `app/api/admin/upload/route.js`; `cmd /c npm run build`; `git add app/page.js app/live/page.js app/admin/live/page.js data/liveConfig.js lib/media-repo.js`; `git commit -m "Add live page and require featured media on homepage"`; `git push origin main`; `cmd /c npx vercel ls`
+- Errors encountered: A follow-up Vercel status check failed inside the sandbox with an npm cache `EPERM` error. The status check was rerun successfully outside the sandbox. Git also emitted non-blocking warnings about `C:\Users\warep\.config\git\ignore` permissions.
+- Fix or decision: Changed homepage selection to require `featuredHome === true` for image and video candidates, kept the recovered baseline copy aligned locally, validated with a clean production build, committed the live feature plus homepage filter as `4967ab8`, pushed `main`, and confirmed Vercel production deployment `https://drum-blonde-c0c1bl5hn-byoroofers-projects.vercel.app` reached `Ready`.
+- Rationale: The admin star must be the authoritative homepage eligibility control, and the current branch already contained the thumbnail-generation fixes the user wanted deployed.
+- Rollback plan: Revert commit `4967ab8`, push the revert to `main`, and verify the previous Vercel production deployment is restored; locally, the homepage filter change can also be reversed by removing the `featuredHome === true` gate in `lib/media-repo.js`.
+- Next steps: Browser-verify `drumblonde.tjware.me`, `/live`, and admin thumbnail visibility in production.
+
+## 2026-04-06T09:05:00-05:00 | Add gallery page and make admin login footer-only
+
+- Timestamp: `2026-04-06T09:05:00-05:00`
+- Task: Move image thumbnails to a separate public gallery page and reduce admin-login prominence on the homepage.
+- Context: After the featured-only homepage deploy, the user wanted thumbnails on a separate page and asked for the admin login to move to the bottom of the homepage with a less visible treatment.
+- Files changed: `app/page.js`, `app/gallery/page.js`, `.agent/project_overview.md`, `.agent/architecture_notes.md`, `.agent/open_issues.md`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: targeted reads of `app/page.js`, `app/globals.css`, `lib/media-repo.js`; `cmd /c npm run build`; `git add app/page.js app/gallery/page.js`; `git commit -m "Add gallery page and quiet admin login link"`; `git push origin main`; `cmd /c npx vercel ls`
+- Errors encountered: A follow-up in-sandbox Vercel status check hit the same npm cache `EPERM` issue; the deployment check was rerun successfully outside the sandbox. Git again emitted non-blocking warnings about `C:\Users\warep\.config\git\ignore` permissions.
+- Fix or decision: Added `/gallery`, appended a gallery card to the homepage links, removed the topbar admin-login CTA, replaced the footer login with a subdued text-style link, committed as `57cf145`, pushed `main`, and confirmed Vercel production deployment `https://drum-blonde-or6ms15an-byoroofers-projects.vercel.app` reached `Ready`.
+- Rationale: This keeps the homepage visually cleaner and video-first while still exposing thumbnails and preserving admin access.
+- Rollback plan: Revert commit `57cf145`, push the revert to `main`, and confirm the next Vercel production deployment becomes active.
+- Next steps: Browser-verify `drumblonde.tjware.me`, especially `/gallery` and the quieter footer login treatment.
+
+## 2026-04-06T11:06:34.5373348-05:00 | Reinstate root admin login enforcement
+
+- Timestamp: `2026-04-06T11:06:34.5373348-05:00`
+- Task: Reinstitute login protection for the root `/admin` and admin API surfaces using the existing configured admin credentials.
+- Context: The user asked whether the site/admin currently required a login. Audit showed the wired guard module `lib/admin-auth.js` had been stubbed to always return `true`, and `app/admin/login/page.js` immediately redirected to `/admin`, so the login page was bypassed despite `ADMIN_*` env vars already being configured locally.
+- Files changed: `lib/admin-auth.js`, `app/admin/login/page.js`, `app/admin/actions.js`, `.agent/architecture_notes.md`, `.agent/project_overview.md`, `.agent/decisions.md`, `.agent/open_issues.md`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: targeted `rg`/`Get-Content` reads across `app/`, `lib/`, `core/`, and `.agent/`; `cmd /c npm run build`; `git diff -- lib/admin-auth.js app/admin/login/page.js app/admin/actions.js`; `git status --short`; `git rev-parse --short HEAD`; `git log -1 --pretty=%s`; `Get-Date -Format o`
+- Errors encountered: `git status` again emitted non-blocking warnings about `C:\Users\warep\.config\git\ignore` permissions. No build errors occurred.
+- Fix or decision: Restored credential validation and signed-cookie checks in `lib/admin-auth.js`, made `/admin/login` render again for unauthenticated users while redirecting authenticated sessions forward, and preserved a safe `/admin`-only post-login redirect path in the server action.
+- Rationale: The root admin routes already depend on `lib/admin-auth.js`, so restoring that fail-closed path is the smallest safe repair and avoids a mid-task auth-system migration.
+- Rollback plan: Revert the auth-helper and login-page changes in `lib/admin-auth.js`, `app/admin/login/page.js`, and `app/admin/actions.js`; rerun `npm run build`; if deployed, push a revert commit and verify `/admin` no longer requires the restored login gate.
+- Next steps: Commit and push the auth repair if the user wants the live deployment updated immediately, then browser-verify that `/admin` redirects to `/admin/login` when signed out and that valid sign-in reaches the dashboard.
