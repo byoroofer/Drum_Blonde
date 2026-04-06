@@ -1362,14 +1362,14 @@ svg {
   height: 56px;
   flex: 0 0 56px;
   border-radius: 20px;
-  color: var(--platform-accent, #ffffff);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--platform-icon-color, var(--platform-accent, #ffffff));
+  border: 1px solid var(--platform-icon-border, rgba(255, 255, 255, 0.18));
   background:
     radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.26), transparent 38%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+    var(--platform-icon-bg, linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05)));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    0 16px 34px rgba(3, 6, 15, 0.34);
+    0 16px 34px var(--platform-icon-shadow, rgba(3, 6, 15, 0.34));
 }
 
 .platform-brand__icon::after {
@@ -1402,9 +1402,10 @@ svg {
 }
 
 .platform-brand__meta small {
-  color: rgba(248, 250, 255, 0.72);
+  color: var(--platform-meta, rgba(248, 250, 255, 0.72));
   font-size: 0.8rem;
   letter-spacing: 0.05em;
+  font-weight: 600;
 }
 
 .cta-button {
@@ -1414,13 +1415,12 @@ svg {
   gap: 14px;
   min-height: 58px;
   padding: 0 24px;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  background:
-    linear-gradient(135deg, var(--platform-accent, var(--pink)), var(--platform-accent-strong, var(--orange))) !important;
+  border: 1px solid var(--platform-border-color, rgba(255, 255, 255, 0.18)) !important;
+  background: var(--platform-cta-bg, linear-gradient(135deg, var(--platform-accent, var(--pink)), var(--platform-accent-strong, var(--orange)))) !important;
   color: var(--platform-ink, #ffffff);
   overflow: hidden;
   box-shadow:
-    0 20px 50px color-mix(in srgb, var(--platform-accent, var(--pink)) 28%, transparent) !important,
+    var(--platform-cta-shadow, 0 20px 50px color-mix(in srgb, var(--platform-accent, var(--pink)) 28%, transparent)) !important,
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
@@ -1445,8 +1445,8 @@ svg {
   width: 40px;
   height: 40px;
   border-radius: 14px;
-  background: rgba(9, 12, 24, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--platform-action-bg, rgba(9, 12, 24, 0.18));
+  border: 1px solid var(--platform-action-border, rgba(255, 255, 255, 0.16));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
   backdrop-filter: blur(12px);
 }
@@ -1472,6 +1472,23 @@ svg {
   --platform-accent: #ffffff;
   --platform-accent-strong: #d0d7ff;
   --platform-ink: #ffffff;
+  --platform-surface: rgba(9, 14, 30, 0.8);
+  --platform-hover-surface: rgba(11, 18, 38, 0.95);
+  --platform-border-color: rgba(255, 255, 255, 0.12);
+  --platform-hover-border: rgba(255, 255, 255, 0.22);
+  --platform-shadow: 0 24px 48px rgba(3, 6, 15, 0.26);
+  --platform-hover-shadow: 0 28px 56px rgba(3, 6, 15, 0.32);
+  --platform-meta: rgba(248, 250, 255, 0.8);
+  --platform-icon-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+  --platform-icon-border: rgba(255, 255, 255, 0.18);
+  --platform-icon-shadow: rgba(3, 6, 15, 0.34);
+  --platform-action-bg: rgba(255, 255, 255, 0.08);
+  --platform-action-border: rgba(255, 255, 255, 0.12);
+  --platform-cta-bg: linear-gradient(135deg, var(--platform-accent, var(--pink)), var(--platform-accent-strong, var(--orange)));
+  --platform-cta-shadow: 0 20px 50px color-mix(in srgb, var(--platform-accent, var(--pink)) 28%, transparent);
+  background: var(--platform-surface);
+  border-color: var(--platform-border-color);
+  box-shadow: var(--platform-shadow);
 }
 
 .link-card--platform::before,
@@ -1504,28 +1521,87 @@ svg {
 .cta-button--tiktok {
   --platform-accent: #25f4ee;
   --platform-accent-strong: #fe2c55;
-  --platform-sheen: linear-gradient(135deg, rgba(37, 244, 238, 0.12), rgba(254, 44, 85, 0.18) 54%, rgba(0, 0, 0, 0.08));
+  --platform-surface:
+    radial-gradient(circle at 16% 18%, rgba(37, 244, 238, 0.18), transparent 34%),
+    radial-gradient(circle at 85% 82%, rgba(254, 44, 85, 0.22), transparent 30%),
+    linear-gradient(135deg, #050505, #101115 72%);
+  --platform-hover-surface:
+    radial-gradient(circle at 18% 18%, rgba(37, 244, 238, 0.24), transparent 36%),
+    radial-gradient(circle at 86% 82%, rgba(254, 44, 85, 0.28), transparent 32%),
+    linear-gradient(135deg, #080809, #17191f 72%);
+  --platform-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 34%, rgba(37, 244, 238, 0.12) 62%, rgba(254, 44, 85, 0.14));
   --platform-edge: linear-gradient(180deg, #25f4ee, #fe2c55);
+  --platform-border-color: rgba(255, 255, 255, 0.16);
+  --platform-hover-border: rgba(255, 255, 255, 0.28);
+  --platform-shadow: 0 24px 54px rgba(0, 0, 0, 0.42);
+  --platform-hover-shadow: 0 28px 64px rgba(0, 0, 0, 0.52);
+  --platform-meta: rgba(255, 255, 255, 0.84);
+  --platform-icon-color: #ffffff;
+  --platform-icon-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08));
+  --platform-action-bg: rgba(255, 255, 255, 0.12);
+  --platform-action-border: rgba(255, 255, 255, 0.18);
+  --platform-cta-bg: linear-gradient(180deg, #0f1012, #020202);
+  --platform-cta-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(37, 244, 238, 0.14),
+    0 0 28px rgba(254, 44, 85, 0.18);
 }
 
 .link-card--instagram,
 .hero__ticker-link--instagram,
 .social-link--instagram,
 .cta-button--instagram {
-  --platform-accent: #f56040;
-  --platform-accent-strong: #833ab4;
-  --platform-sheen: linear-gradient(135deg, rgba(253, 29, 29, 0.14), rgba(245, 96, 64, 0.18) 35%, rgba(252, 175, 69, 0.14) 58%, rgba(131, 58, 180, 0.16));
+  --platform-accent: #e1306c;
+  --platform-accent-strong: #f77737;
+  --platform-surface:
+    radial-gradient(circle at 18% 18%, rgba(252, 175, 69, 0.28), transparent 30%),
+    radial-gradient(circle at 84% 16%, rgba(225, 48, 108, 0.26), transparent 34%),
+    linear-gradient(135deg, #5b1f70, #b52e8a 44%, #ea4c89 74%, #f77737 100%);
+  --platform-hover-surface:
+    radial-gradient(circle at 18% 18%, rgba(252, 175, 69, 0.32), transparent 32%),
+    radial-gradient(circle at 84% 16%, rgba(225, 48, 108, 0.32), transparent 36%),
+    linear-gradient(135deg, #66217d, #c23291 44%, #f35a95 74%, #ff8445 100%);
+  --platform-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 42%, rgba(255, 255, 255, 0.08));
   --platform-edge: linear-gradient(180deg, #fd1d1d, #fcb045, #833ab4);
+  --platform-border-color: rgba(255, 184, 214, 0.32);
+  --platform-hover-border: rgba(255, 214, 228, 0.44);
+  --platform-shadow: 0 24px 56px rgba(161, 37, 93, 0.28);
+  --platform-hover-shadow: 0 28px 62px rgba(161, 37, 93, 0.34);
+  --platform-meta: rgba(255, 240, 247, 0.92);
+  --platform-icon-color: #c13584;
+  --platform-icon-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.1));
+  --platform-icon-border: rgba(255, 225, 236, 0.32);
+  --platform-action-bg: rgba(255, 255, 255, 0.16);
+  --platform-action-border: rgba(255, 230, 239, 0.24);
+  --platform-cta-bg: linear-gradient(135deg, #cf2b7b, #f77737);
+  --platform-cta-shadow: 0 20px 50px rgba(214, 63, 120, 0.34);
 }
 
 .link-card--youtube,
 .hero__ticker-link--youtube,
 .social-link--youtube,
 .cta-button--youtube {
-  --platform-accent: #ff0033;
-  --platform-accent-strong: #ff5e62;
-  --platform-sheen: linear-gradient(135deg, rgba(255, 0, 51, 0.16), rgba(255, 94, 98, 0.14) 48%, rgba(255, 255, 255, 0.03));
-  --platform-edge: linear-gradient(180deg, #ff0033, #ff5e62);
+  --platform-accent: #ff0000;
+  --platform-accent-strong: #c40000;
+  --platform-surface:
+    radial-gradient(circle at 14% 18%, rgba(255, 255, 255, 0.18), transparent 24%),
+    linear-gradient(135deg, #900000, #cf0707 48%, #ff2c2c 100%);
+  --platform-hover-surface:
+    radial-gradient(circle at 14% 18%, rgba(255, 255, 255, 0.22), transparent 28%),
+    linear-gradient(135deg, #9b0000, #da0a0a 48%, #ff3f3f 100%);
+  --platform-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 40%, rgba(255, 255, 255, 0.08));
+  --platform-edge: linear-gradient(180deg, #ff6a6a, #ffffff);
+  --platform-border-color: rgba(255, 207, 207, 0.24);
+  --platform-hover-border: rgba(255, 236, 236, 0.36);
+  --platform-shadow: 0 24px 56px rgba(155, 0, 0, 0.28);
+  --platform-hover-shadow: 0 28px 64px rgba(155, 0, 0, 0.34);
+  --platform-meta: rgba(255, 241, 241, 0.92);
+  --platform-icon-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08));
+  --platform-icon-border: rgba(255, 230, 230, 0.3);
+  --platform-action-bg: rgba(255, 255, 255, 0.14);
+  --platform-action-border: rgba(255, 238, 238, 0.24);
+  --platform-cta-bg: linear-gradient(135deg, #d40000, #ff2a2a);
+  --platform-cta-shadow: 0 20px 50px rgba(168, 0, 0, 0.34);
 }
 
 .link-card--twitch,
@@ -1533,9 +1609,26 @@ svg {
 .social-link--twitch,
 .cta-button--twitch {
   --platform-accent: #9146ff;
-  --platform-accent-strong: #772ce8;
-  --platform-sheen: linear-gradient(135deg, rgba(145, 70, 255, 0.18), rgba(119, 44, 232, 0.16) 48%, rgba(255, 255, 255, 0.03));
-  --platform-edge: linear-gradient(180deg, #9146ff, #772ce8);
+  --platform-accent-strong: #6441a5;
+  --platform-surface:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.14), transparent 28%),
+    linear-gradient(135deg, #52318f, #7a40db 52%, #9146ff 100%);
+  --platform-hover-surface:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.18), transparent 30%),
+    linear-gradient(135deg, #5c379d, #8545ea 52%, #9c56ff 100%);
+  --platform-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 38%, rgba(255, 255, 255, 0.08));
+  --platform-edge: linear-gradient(180deg, #f0e5ff, #9146ff);
+  --platform-border-color: rgba(233, 217, 255, 0.22);
+  --platform-hover-border: rgba(245, 237, 255, 0.34);
+  --platform-shadow: 0 24px 56px rgba(83, 49, 143, 0.3);
+  --platform-hover-shadow: 0 28px 64px rgba(83, 49, 143, 0.36);
+  --platform-meta: rgba(246, 239, 255, 0.9);
+  --platform-icon-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
+  --platform-icon-border: rgba(240, 230, 255, 0.26);
+  --platform-action-bg: rgba(255, 255, 255, 0.14);
+  --platform-action-border: rgba(242, 233, 255, 0.24);
+  --platform-cta-bg: linear-gradient(135deg, #6d35d9, #9146ff);
+  --platform-cta-shadow: 0 20px 50px rgba(102, 65, 165, 0.32);
 }
 
 .link-card--email,
@@ -1652,16 +1745,28 @@ svg {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 68px;
-  min-height: 36px;
-  padding: 0 12px;
+  gap: 8px;
+  min-width: 84px;
+  min-height: 40px;
+  padding: 0 14px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #f8fbff;
+  background: var(--platform-action-bg, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--platform-action-border, rgba(255, 255, 255, 0.12));
+  color: var(--platform-action-color, #f8fbff);
   font-size: 0.76rem;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.platform-link__action svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.platform-link__action svg path {
+  stroke-width: 2.2;
 }
 
 .hero__ticker-link strong,
@@ -1671,15 +1776,17 @@ svg {
 
 .hero__ticker a.hero__ticker-link,
 .social-list a.social-link {
-  background: rgba(9, 14, 30, 0.8);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--platform-surface);
+  border-color: var(--platform-border-color);
+  box-shadow: var(--platform-shadow);
 }
 
 .hero__ticker a.hero__ticker-link:hover,
 .social-list a.social-link:hover,
 .link-card--platform:hover {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(11, 18, 38, 0.95);
+  border-color: var(--platform-hover-border, rgba(255, 255, 255, 0.22));
+  background: var(--platform-hover-surface, rgba(11, 18, 38, 0.95));
+  box-shadow: var(--platform-hover-shadow, var(--platform-shadow));
 }
 
 @keyframes drift {
@@ -1964,6 +2071,27 @@ svg {
   z-index: 2;
 }
 
+.admin-library-tile__spotlight-form {
+  position: absolute;
+  top: 52px;
+  right: 8px;
+  z-index: 2;
+}
+
+.admin-library-tile__quick-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  gap: 8px;
+  z-index: 2;
+}
+
+.admin-library-tile__quick-actions .admin-library-tile__star-form,
+.admin-library-tile__quick-actions .admin-library-tile__spotlight-form {
+  position: static;
+}
+
 .admin-library-tile__star {
   display: flex;
   align-items: center;
@@ -1994,6 +2122,38 @@ svg {
 .admin-library-tile__star--on:hover {
   background: rgba(255, 77, 141, 1);
   color: #fff;
+}
+
+.admin-library-tile__spotlight {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: rgba(167, 243, 255, 0.72);
+  font-size: 16px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 150ms, color 150ms, transform 150ms;
+}
+
+.admin-library-tile__spotlight:hover {
+  background: rgba(0, 0, 0, 0.8);
+  color: #9be9ff;
+  transform: scale(1.1);
+}
+
+.admin-library-tile__spotlight--on {
+  background: rgba(23, 227, 255, 0.22);
+  color: #ffffff;
+  box-shadow: 0 0 0 1px rgba(23, 227, 255, 0.24);
+}
+
+.admin-library-tile__spotlight--on:hover {
+  background: rgba(23, 227, 255, 0.32);
 }
 
 .admin-library-tile__media {
@@ -2183,6 +2343,42 @@ svg {
 .admin-library-editor__form {
   display: grid;
   gap: 14px;
+}
+
+.clip-range-editor {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.clip-range-editor__summary,
+.clip-range-editor__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.clip-range-editor__summary span,
+.clip-range-editor__footer span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.82rem;
+}
+
+.clip-range-editor__field {
+  gap: 10px;
+}
+
+.clip-range-editor__field input[type="range"] {
+  width: 100%;
+}
+
+.clip-range-editor__field input[type="number"] {
+  max-width: 120px;
 }
 
 @media (max-width: 1200px) {

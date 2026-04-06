@@ -145,7 +145,10 @@ function SocialLinkCard({ item, className }) {
   return (
     <TrackableLink className={className} href={item.href} eventLabel={item.label}>
       <PlatformBadge item={item} compact />
-      <span className="platform-link__action">Open</span>
+      <span className="platform-link__action">
+        Open
+        <ArrowIcon />
+      </span>
     </TrackableLink>
   );
 }
