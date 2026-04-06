@@ -6,6 +6,81 @@ import crypto from "node:crypto";
 import ffmpegPath from "ffmpeg-static";
 import ffprobe from "ffprobe-static";
 
+function appendSeekCandidate(candidates: number[], value: number, maxSeconds: number | null) {
+  if (!Number.isFinite(value)) {
+    return;
+  }
+
+  const boundedMax = Number.isFinite(maxSeconds) ? Math.max(0.12, maxSeconds as number) : null;
+  const clamped = boundedMax == null ? value : Math.min(Math.max(0.12, value), boundedMax);
+  if (candidates.some((entry) => Math.abs(entry - clamped) < 0.08)) {
+    return;
+  }
+
+  candidates.push(Number(clamped.toFixed(2)));
+}
+
+function buildThumbnailSeekCandidates(durationSeconds: number | null) {
+  const duration = Number(durationSeconds);
+  const safeEnd = Number.isFinite(duration) && duration > 0 ? Math.max(0.12, duration - 0.12) : null;
+  const candidates: number[] = [];
+
+  if (safeEnd != null) {
+    appendSeekCandidate(candidates, Math.min(Math.max(duration * 0.18, 0.45), 3.2), safeEnd);
+    appendSeekCandidate(candidates, Math.min(Math.max(duration * 0.12, 0.3), 2.2), safeEnd);
+    appendSeekCandidate(candidates, 1.6, safeEnd);
+    appendSeekCandidate(candidates, 0.8, safeEnd);
+    appendSeekCandidate(candidates, 2.6, safeEnd);
+    appendSeekCandidate(candidates, 0.15, safeEnd);
+  } else {
+    appendSeekCandidate(candidates, 1.6, null);
+    appendSeekCandidate(candidates, 0.8, null);
+    appendSeekCandidate(candidates, 2.6, null);
+    appendSeekCandidate(candidates, 0.15, null);
+  }
+
+  return candidates.length ? candidates : [0.15];
+}
+
+function isLowInformationFrame(buffer: Buffer) {
+  const stride = 32;
+  const sample = buffer.length > 4096 ? buffer.subarray(0, 4096) : buffer;
+  let sum = 0;
+  let sumSquares = 0;
+  let samples = 0;
+
+  for (let index = 0; index < sample.length; index += stride) {
+    const value = sample[index] || 0;
+    sum += value;
+    sumSquares += value * value;
+    samples += 1;
+  }
+
+  if (samples === 0) {
+    return false;
+  }
+
+  const average = sum / samples;
+  const variance = Math.max(0, sumSquares / samples - average * average);
+  return average < 18 && Math.sqrt(variance) < 12;
+}
+
+async function extractVideoFrame(tempPath: string, outputPath: string, seekSeconds: number) {
+  await runBinary(ffmpegPath as string, [
+    "-y",
+    "-ss",
+    String(seekSeconds),
+    "-i",
+    tempPath,
+    "-frames:v",
+    "1",
+    "-update",
+    "1",
+    outputPath
+  ]);
+  return fs.readFile(outputPath);
+}
+
 async function runBinary(binary: string, args: string[]) {
   return new Promise<string>((resolve, reject) => {
     const stdout: Buffer[] = [];
@@ -66,8 +141,21 @@ export async function inspectUploadedVideo(buffer: Buffer, originalFilename: str
 
     if (ffmpegPath) {
       const thumbPath = path.join(temp.tempDir, "thumb.jpg");
-      await runBinary(ffmpegPath, ["-y", "-ss", "00:00:01", "-i", temp.tempPath, "-frames:v", "1", thumbPath]);
-      thumbnailBuffer = await fs.readFile(thumbPath);
+      const candidates = buildThumbnailSeekCandidates(Number.isFinite(durationSeconds) ? durationSeconds : null);
+
+      for (const seekSeconds of candidates) {
+        const frameBuffer = await extractVideoFrame(temp.tempPath, thumbPath, seekSeconds);
+        if (!isLowInformationFrame(frameBuffer)) {
+          thumbnailBuffer = frameBuffer;
+          break;
+        }
+      }
+
+      if (!thumbnailBuffer) {
+        thumbnailBuffer = await extractVideoFrame(temp.tempPath, thumbPath, candidates[0] || 0.15);
+      }
+
+      await fs.unlink(thumbPath).catch(() => {});
     }
 
     return {

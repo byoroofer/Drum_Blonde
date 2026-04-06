@@ -101,3 +101,13 @@ Record durable technical and operational decisions here. Prefer one decision blo
 - Rationale: This keeps homepage behavior understandable to operators: star = eligible, highest views among starred = leader.
 - Consequence: Non-starred videos no longer enter the homepage rotation path, and `app/page.js` must preserve the selection order coming from `getHomepageMedia()` instead of re-sorting it.
 - Revisit when: The homepage curation model intentionally introduces manual spotlight overrides or a different ranking rule.
+
+## 2026-04-06 | Active | Video thumbnails should use a hybrid preview-and-persist path
+
+- Date: `2026-04-06`
+- Status: Active
+- Decision: For admin media tiles, keep durable server-generated JPEG thumbnails as the long-term source of truth, but when a video still lacks a stored poster, render a paused video frame client-side immediately and trigger the existing thumbnail backfill route so later loads use the cached image.
+- Context: The previous placeholder-only fallback kept layout stable but did not let operators identify video content from the tile itself.
+- Rationale: This is the smallest reliable path that fixes legacy rows without redesigning the library or depending on third-party transformation URLs.
+- Consequence: Existing videos without posters become visually identifiable on first load, new/updated videos still store real thumbnails, and image behavior remains unchanged.
+- Revisit when: The project adopts a dedicated background thumbnail job or persistent media-processing queue that can guarantee posters for every video before the library is opened.

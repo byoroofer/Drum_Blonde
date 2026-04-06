@@ -299,3 +299,17 @@ pm run db:setup attempt.
   4. Run `cmd /c npm run build`.
   5. Browser-check `/admin`, `/admin/media`, and `/` to confirm the prior admin and homepage behavior is back.
 - Rollback verification: Confirm the admin sidebar is gone, the media library is back inside `/admin`, the homepage no longer uses the new pinned-starred-video ordering, and both validation commands pass after the revert.
+
+## 2026-04-06T13:39:26.7421278-05:00 | Real video frame thumbnails for admin media tiles
+
+- Timestamp: `2026-04-06T13:39:26.7421278-05:00`
+- Change summary: Added `app/components/media-thumbnail.jsx`, switched `app/admin/media/page.js` to use it for tile/detail previews, added minimal thumbnail-surface CSS in `app/globals.css`, and upgraded both `lib/media-repo.js` and `core/video.ts` to seek across several early video frames and avoid saving obviously dark/blank thumbnails.
+- Files changed: `app/admin/media/page.js`, `app/components/media-thumbnail.jsx`, `app/globals.css`, `lib/media-repo.js`, `core/video.ts`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/decisions.md`, `.agent/session_handoff.md`
+- Commands run: targeted source audits; `cmd /c npm run build`; `cmd /c npx tsc --noEmit`
+- Rollback steps:
+  1. Delete `app/components/media-thumbnail.jsx`.
+  2. Restore the previous versions of `app/admin/media/page.js`, `app/globals.css`, `lib/media-repo.js`, and `core/video.ts`.
+  3. Run `cmd /c npm run build`.
+  4. Run `cmd /c npx tsc --noEmit`.
+  5. Reopen `/admin/media` and confirm missing video posters have returned to the prior placeholder-only behavior.
+- Rollback verification: Confirm image tiles still behave exactly as before, confirm missing video tiles no longer show paused-frame previews, and confirm both validation commands pass after the revert.

@@ -1,5 +1,6 @@
 import TileActionForm from "@/app/admin/tile-action-form";
 import { deleteMediaSilent, toggleFeaturedHomeSilent, toggleHiddenSilent, updateMediaAction } from "@/app/admin/actions";
+import MediaThumbnail from "@/app/components/media-thumbnail";
 import TrackableVideo from "@/app/components/trackable-video";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getAdminAlbums, getAdminMedia, getHomepageMedia, getMediaEngineConfig } from "@/lib/media-repo";
@@ -413,7 +414,17 @@ export default async function AdminMediaPage({ searchParams }) {
                 <article key={item.id} id={`tile-${item.id}`} className={`admin-library-tile${selectedItem?.id === item.id ? " admin-library-tile--active" : ""}${item.featuredHome ? " admin-library-tile--featured" : ""}`}>
                   <div className="admin-library-tile__preview">
                     <a href={`${tileHref}#tile-${item.id}`} className="admin-library-tile__preview-link">
-                      <img className="admin-library-tile__media" src={getThumbnailSrc(item)} alt={item.title || ""} loading="lazy" decoding="async" />
+                      <MediaThumbnail
+                        className="admin-library-tile__media"
+                        kind={item.kind}
+                        alt={item.title || ""}
+                        storedThumbnailSrc={item.storedThumbnailUrl}
+                        fallbackImageSrc={item.placeholderThumbnailUrl || getThumbnailSrc(item)}
+                        videoSrc={item.playbackUrl}
+                        durationSeconds={item.durationSeconds}
+                        thumbnailBackfillUrl={item.thumbnailBackfillUrl}
+                        cacheKey={`${item.id || item.url || "media"}-${item.updatedAt || item.createdAt || "0"}`}
+                      />
                       <div className="admin-library-tile__overlay" />
                       <div className="admin-library-tile__badges">
                         <span>{item.kind}</span>
@@ -501,7 +512,17 @@ export default async function AdminMediaPage({ searchParams }) {
                   controls
                 />
               ) : (
-                <img src={getThumbnailSrc(selectedItem)} alt={selectedItem.title} />
+                <MediaThumbnail
+                  className="admin-library-detail__media"
+                  kind={selectedItem.kind}
+                  alt={selectedItem.title}
+                  storedThumbnailSrc={selectedItem.storedThumbnailUrl || getThumbnailSrc(selectedItem)}
+                  fallbackImageSrc={selectedItem.placeholderThumbnailUrl || getThumbnailSrc(selectedItem)}
+                  videoSrc={selectedItem.playbackUrl}
+                  durationSeconds={selectedItem.durationSeconds}
+                  thumbnailBackfillUrl={selectedItem.thumbnailBackfillUrl}
+                  cacheKey={`${selectedItem.id || selectedItem.url || "media"}-${selectedItem.updatedAt || selectedItem.createdAt || "0"}-detail`}
+                />
               )}
 
               <div className="admin-library-editor__meta">
