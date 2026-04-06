@@ -226,6 +226,29 @@ function MerchCard({ item }) {
   );
 }
 
+function MinimalFooterLink({ href, children }) {
+  return (
+    <a
+      href={href}
+      style={{
+        minHeight: "auto",
+        padding: "0",
+        border: "0",
+        borderRadius: "0",
+        background: "transparent",
+        boxShadow: "none",
+        color: "rgba(255, 255, 255, 0.55)",
+        fontSize: "0.8rem",
+        fontWeight: 500,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase"
+      }}
+    >
+      {children}
+    </a>
+  );
+}
+
 function uniqueMedia(items) {
   const seen = new Set();
 
@@ -327,6 +350,12 @@ export default async function HomePage() {
   );
   const prioritizedVideos = fillMediaSlots(uniqueVideoPool, 6);
   const primaryLinksWithoutShop = primaryLinks.filter((item) => item.platform !== "shop");
+  const galleryLink = {
+    title: "Photo Gallery",
+    description: "See Brooke's image thumbnails and featured photos in one place.",
+    href: "/gallery"
+  };
+  const homepageLinks = [...primaryLinksWithoutShop, galleryLink];
   const merchLink = primaryLinks.find((item) => item.platform === "shop") || null;
 
   const heroVideo = prioritizedVideos[0] || null;
@@ -390,9 +419,6 @@ export default async function HomePage() {
             </div>
           </div>
           <nav className="topbar__actions" aria-label="Site actions">
-            <TrackableLink href="/admin/login" target="_self" rel={undefined} eventLabel="Admin login nav">
-              Admin Login
-            </TrackableLink>
             <TrackableLink href={shop.shopUrl} eventLabel="Visit shop">
               Visit shop
             </TrackableLink>
@@ -504,7 +530,7 @@ export default async function HomePage() {
         />
 
         <div className="link-grid">
-          {primaryLinksWithoutShop.map((item) => (
+          {homepageLinks.map((item) => (
             <LinkCard key={item.title} item={item} />
           ))}
         </div>
@@ -567,10 +593,8 @@ export default async function HomePage() {
       </section>
 
       <footer className="site-footer">
-        <span>Site admin</span>
-        <TrackableLink href="/admin/login" target="_self" rel={undefined} eventLabel="Admin login footer">
-          Admin Login
-        </TrackableLink>
+        <span>Drum Blonde</span>
+        <MinimalFooterLink href="/admin/login">Admin Login</MinimalFooterLink>
       </footer>
     </main>
   );
