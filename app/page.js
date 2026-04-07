@@ -340,7 +340,7 @@ export default async function HomePage() {
     ...(homepageMedia.featuredVideos || []),
     ...eligibleLibraryVideos
   ]);
-  const prioritizedVideos = fillMediaSlots(uniqueVideoPool, 9);
+  const prioritizedVideos = fillMediaSlots(uniqueVideoPool, 10);
   const primaryLinksWithoutShop = primaryLinks.filter((item) => item.platform !== "shop");
   const galleryLink = {
     title: "Photo Gallery",
@@ -350,9 +350,10 @@ export default async function HomePage() {
   const homepageLinks = [...primaryLinksWithoutShop, galleryLink];
   const merchLink = primaryLinks.find((item) => item.platform === "shop") || null;
 
-  const featuredVideos = prioritizedVideos.slice(0, 3);
-  const featureLeadVideo = featuredVideos[0] || null;
-  const reelVideos = prioritizedVideos.slice(3, 9);
+  const spotlightVideo = prioritizedVideos[0] || null;
+  const featuredVideos = prioritizedVideos.slice(1, 4);
+  const featureLeadVideo = spotlightVideo || featuredVideos[0] || null;
+  const reelVideos = prioritizedVideos.slice(4, 10);
 
   const trackedMediaIds = prioritizedVideos.map((item) => item?.id).filter(Boolean);
 
@@ -436,6 +437,18 @@ export default async function HomePage() {
               ))}
             </div>
           </div>
+
+          {spotlightVideo ? (
+            <aside className="hero__spotlight" aria-label="Spotlight video">
+              <VideoCard
+                item={spotlightVideo}
+                autoPlay
+                muted={false}
+                showBody={false}
+                className="video-card video-card--spotlight hero__spotlight-card"
+              />
+            </aside>
+          ) : null}
         </div>
 
         {featuredVideos.length ? (
