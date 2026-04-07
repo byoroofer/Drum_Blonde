@@ -174,7 +174,7 @@ function EmbeddedVideo({ item, className = "video-card__player", autoPlay = fals
   );
 }
 
-function VideoCard({ item, autoPlay = false, muted = true, className = "video-card" }) {
+function VideoCard({ item, autoPlay = false, muted = true, className = "video-card", showBody = true }) {
   if (!item) {
     return null;
   }
@@ -199,10 +199,12 @@ function VideoCard({ item, autoPlay = false, muted = true, className = "video-ca
           showPlayButton={!autoPlay}
         />
       )}
-      <div className="video-card__body">
-        <h3>{item.title}</h3>
-        <p>{item.description}</p>
-      </div>
+      {showBody ? (
+        <div className="video-card__body">
+          <h3>{item.title}</h3>
+          <p>{item.description}</p>
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -296,7 +298,8 @@ function buildStaticHomepageMedia() {
       heroVideo: fallbackVideos[0] || null,
       secondaryVideo: fallbackVideos[1] || fallbackVideos[0] || null,
       tertiaryVideo: fallbackVideos[2] || fallbackVideos[1] || fallbackVideos[0] || null,
-      backgroundVideos: fallbackVideos.slice(0, 3)
+      backgroundVideos: fallbackVideos.slice(0, 3),
+      featuredVideos: fallbackVideos
     }
   };
 }
@@ -322,13 +325,22 @@ export default async function HomePage() {
   }
 
   const homepageMedia = media.home;
+  const eligibleLibraryVideos = (media.videos || []).filter(
+    (item) =>
+      item?.kind === "video" &&
+      item.active !== false &&
+      item.isHidden !== true &&
+      item.moderationStatus !== "rejected"
+  );
   const uniqueVideoPool = uniqueMedia([
     homepageMedia.heroVideo,
     homepageMedia.secondaryVideo,
     homepageMedia.tertiaryVideo,
-    ...(homepageMedia.backgroundVideos || [])
+    ...(homepageMedia.backgroundVideos || []),
+    ...(homepageMedia.featuredVideos || []),
+    ...eligibleLibraryVideos
   ]);
-  const prioritizedVideos = fillMediaSlots(uniqueVideoPool, 6);
+  const prioritizedVideos = fillMediaSlots(uniqueVideoPool, 9);
   const primaryLinksWithoutShop = primaryLinks.filter((item) => item.platform !== "shop");
   const galleryLink = {
     title: "Photo Gallery",
@@ -338,10 +350,9 @@ export default async function HomePage() {
   const homepageLinks = [...primaryLinksWithoutShop, galleryLink];
   const merchLink = primaryLinks.find((item) => item.platform === "shop") || null;
 
-  const heroVideo = prioritizedVideos[0] || null;
-  const secondaryVideo = prioritizedVideos[1] || prioritizedVideos[0] || null;
-  const featureLeadVideo = prioritizedVideos[2] || prioritizedVideos[1] || prioritizedVideos[0] || null;
-  const reelVideos = prioritizedVideos.slice(3, 5);
+  const featuredVideos = prioritizedVideos.slice(0, 3);
+  const featureLeadVideo = featuredVideos[0] || null;
+  const reelVideos = prioritizedVideos.slice(3, 9);
 
   const trackedMediaIds = prioritizedVideos.map((item) => item?.id).filter(Boolean);
 
@@ -405,66 +416,54 @@ export default async function HomePage() {
           </nav>
         </header>
 
-        <div className={`hero__grid hero__grid--video-only${heroVideo || secondaryVideo ? "" : " hero__grid--single-column"}`}>
-          <div className="hero__left">
-            <div className="hero__content">
-              <span className="status-pill">{hero.status}</span>
-              <h2>{hero.headline}</h2>
-              <p>{hero.description}</p>
+        <div className="hero__intro">
+          <div className="hero__content">
+            <span className="status-pill">{hero.status}</span>
+            <h2>{hero.headline}</h2>
+            <p>{hero.description}</p>
 
-              <div className="hero__actions">
-                <SocialCta item={{ label: hero.primaryCta.label, href: hero.primaryCta.href, platform: hero.primaryCta.platform }} />
-                <SocialCta item={{ label: hero.secondaryCta.label, href: hero.secondaryCta.href, platform: hero.secondaryCta.platform }} secondary />
-              </div>
-
-              <div className="hero__stats">
-                {hero.highlights.map((item) => (
-                  <article key={item.title}>
-                    <strong>{item.title}</strong>
-                    <span>{item.copy}</span>
-                  </article>
-                ))}
-              </div>
+            <div className="hero__actions">
+              <SocialCta item={{ label: hero.primaryCta.label, href: hero.primaryCta.href, platform: hero.primaryCta.platform }} />
+              <SocialCta item={{ label: hero.secondaryCta.label, href: hero.secondaryCta.href, platform: hero.secondaryCta.platform }} secondary />
             </div>
 
-            {featureLeadVideo ? <VideoCard item={featureLeadVideo} autoPlay className="video-card video-card--left-feature" /> : null}
+            <div className="hero__stats">
+              {hero.highlights.map((item) => (
+                <article key={item.title}>
+                  <strong>{item.title}</strong>
+                  <span>{item.copy}</span>
+                </article>
+              ))}
+            </div>
           </div>
-
-          {heroVideo || secondaryVideo ? (
-            <aside className="hero__aside hero__aside--video-only">
-              {heroVideo ? <VideoCard item={heroVideo} autoPlay muted={false} className="video-card video-card--spotlight" /> : null}
-              {secondaryVideo ? <VideoCard item={secondaryVideo} autoPlay className="video-card video-card--support" /> : null}
-            </aside>
-          ) : null}
         </div>
 
+        {featuredVideos.length ? (
+          <div className="hero__video-library" aria-label="Featured videos">
+            {featuredVideos.map((item, index) => (
+              <VideoCard
+                key={`${item.id}-featured-${index}`}
+                item={item}
+                autoPlay
+                muted
+                showBody={false}
+                className="video-card video-card--library video-card--library-feature"
+              />
+            ))}
+          </div>
+        ) : null}
+
         {reelVideos.length ? (
-          <div className="hero__reel-strip hero__reel-strip--wide">
+          <div className="hero__reel-strip hero__reel-strip--library" aria-label="Video reel library">
             {reelVideos.map((item, index) => (
-              <article key={`${item.id}-${index}`} className="reel-chip">
-                {item.embedUrl ? (
-                  <EmbeddedVideo item={item} className="reel-chip__video" autoPlay />
-                ) : (
-                  <TrackableVideo
-                    className="reel-chip__video"
-                    src={item.url}
-                    playbackUrl={item.playbackUrl}
-                    poster={item.posterUrl || item.thumbnailUrl}
-                    title={item.title}
-                    mediaId={item.id}
-                    autoPlay
-                    loop
-                    muted
-                    controls
-                    eager
-                    showPlayButton={false}
-                  />
-                )}
-                <div>
-                  <strong>{item.title}</strong>
-                  <span>{item.description}</span>
-                </div>
-              </article>
+              <VideoCard
+                key={`${item.id}-reel-${index}`}
+                item={item}
+                autoPlay
+                muted
+                showBody={false}
+                className="video-card video-card--library video-card--library-reel"
+              />
             ))}
           </div>
         ) : null}
