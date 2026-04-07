@@ -13,6 +13,7 @@ import {
 } from "@/lib/admin-auth";
 import { hasAdminCredentials } from "@/lib/env";
 import {
+  applyMediaEdits,
   createMediaAlbum,
   deleteMediaAsset,
   updateMediaAsset,
@@ -87,11 +88,14 @@ export async function updateMediaAction(formData) {
       overrideBy: String(formData.get("overrideBy") || ""),
       overrideNotes: String(formData.get("overrideNotes") || ""),
       featuredHome: formData.get("featuredHome") === "on",
+      spotlightHome: formData.get("spotlightHome") === "on",
       active: formData.get("active") === "on",
       isHidden: formData.get("isHidden") === "on",
       albumSlugs: formData.getAll("albumSlugs").map((value) => String(value || "")).filter(Boolean),
       homeSlot: String(formData.get("homeSlot") || ""),
-      manualRank: String(formData.get("manualRank") || "0")
+      manualRank: String(formData.get("manualRank") || "0"),
+      clipStartSeconds: String(formData.get("clipStartSeconds") || "0"),
+      clipEndSeconds: String(formData.get("clipEndSeconds") || "")
     });
   } catch (error) {
     redirect(
@@ -210,6 +214,40 @@ export async function deleteMediaAction(formData) {
   redirect(buildAdminRedirectUrl(returnTo, { save: "deleted", media: id, edit: null, reason: null }));
 }
 
+export async function saveMediaEditAction(formData) {
+  await requireAdmin();
+
+  const id = String(formData.get("id") || "").trim();
+  const returnTo = normalizeAdminReturnTo(formData.get("returnTo"));
+
+  try {
+    await applyMediaEdits({
+      id,
+      trimStartSeconds: String(formData.get("editTrimStartSeconds") || "0"),
+      trimEndSeconds: String(formData.get("editTrimEndSeconds") || ""),
+      muteAudio: formData.get("editMuteAudio") === "on",
+      rotateDegrees: String(formData.get("imageRotateDegrees") || "0"),
+      brightness: String(formData.get("imageBrightness") || "1"),
+      contrast: String(formData.get("imageContrast") || "1"),
+      saturation: String(formData.get("imageSaturation") || "1")
+    });
+  } catch (error) {
+    redirect(
+      buildAdminRedirectUrl(returnTo, {
+        save: "error",
+        media: id,
+        reason: error instanceof Error ? error.message : "Editor save failed."
+      })
+    );
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/admin/media");
+  revalidatePath("/gallery");
+  redirect(buildAdminRedirectUrl(returnTo, { save: "edited", media: id, reason: null }));
+}
+
 export async function updateFilterConfigAction(formData) {
   await requireAdmin();
 
@@ -250,11 +288,34 @@ export async function toggleFeaturedHomeSilent(formData) {
   revalidatePath("/gallery");
 }
 
+export async function toggleSpotlightSilent(formData) {
+  await requireAdmin();
+  const id = String(formData.get("id") || "").trim();
+  const spotlightHome = formData.get("spotlightHome") === "true";
+  await updateMediaAsset({ id, spotlightHome });
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/admin/media");
+  revalidatePath("/gallery");
+}
+
 export async function toggleHiddenSilent(formData) {
   await requireAdmin();
   const id = String(formData.get("id") || "").trim();
   const isHidden = formData.get("isHidden") === "true";
   await updateMediaAsset({ id, isHidden });
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/admin/media");
+}
+
+export async function adjustManualRankSilent(formData) {
+  await requireAdmin();
+  const id = String(formData.get("id") || "").trim();
+  const direction = String(formData.get("rankDirection") || "").trim().toLowerCase();
+  const step = Math.max(1, Math.min(10, Math.round(Number(formData.get("rankStep") || 1) || 1)));
+  const manualRankDelta = direction === "down" ? -step : step;
+  await updateMediaAsset({ id, manualRankDelta });
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/admin/media");

@@ -15,6 +15,8 @@ export default function TrackableVideo({
   poster,
   title,
   mediaId,
+  clipStartSeconds = 0,
+  clipEndSeconds = null,
   autoPlay = false,
   loop = false,
   muted,
@@ -28,16 +30,23 @@ export default function TrackableVideo({
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const attachedSourceRef = useRef("");
+  const clipAppliedRef = useRef(false);
   const tracked = useRef(false);
   const shouldMute = muted ?? autoPlay;
   const sourceUrl = playbackUrl || src || "";
   const isHls = isHlsSource(sourceUrl);
+  const normalizedClipStart = Number.isFinite(Number(clipStartSeconds)) ? Math.max(0, Number(clipStartSeconds)) : 0;
+  const normalizedClipEnd = Number.isFinite(Number(clipEndSeconds)) && Number(clipEndSeconds) > normalizedClipStart
+    ? Number(clipEndSeconds)
+    : null;
   const [isActivated, setIsActivated] = useState(autoPlay || eager);
   const [shouldLoad, setShouldLoad] = useState(autoPlay || eager);
   const [isVisible, setIsVisible] = useState(autoPlay || eager);
   const [isReady, setIsReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const [playRequiresInteraction, setPlayRequiresInteraction] = useState(false);
+  const [posterVisible, setPosterVisible] = useState(Boolean(poster));
 
   useEffect(() => {
     const node = containerRef.current;
@@ -79,6 +88,18 @@ export default function TrackableVideo({
   }, [autoPlay]);
 
   useEffect(() => {
+    clipAppliedRef.current = false;
+  }, [normalizedClipEnd, normalizedClipStart, sourceUrl]);
+
+  useEffect(() => {
+    setPosterVisible(Boolean(poster));
+  }, [poster, sourceUrl]);
+
+  useEffect(() => {
+    setPlayRequiresInteraction(false);
+  }, [sourceUrl, autoPlay]);
+
+  useEffect(() => {
     return () => {
       if (hlsRef.current) {
         hlsRef.current.destroy();
@@ -102,6 +123,7 @@ export default function TrackableVideo({
 
       setLoadError("");
       setIsReady(false);
+      setPlayRequiresInteraction(false);
 
       if (hlsRef.current) {
         hlsRef.current.destroy();
@@ -174,7 +196,11 @@ export default function TrackableVideo({
     }
 
     if (isVisible) {
-      video.play().catch(() => {});
+      video.play().then(() => {
+        setPlayRequiresInteraction(false);
+      }).catch(() => {
+        setPlayRequiresInteraction(true);
+      });
       return;
     }
 
@@ -185,6 +211,17 @@ export default function TrackableVideo({
     setIsActivated(true);
     setShouldLoad(true);
     setLoadError("");
+    setPlayRequiresInteraction(false);
+    const video = videoRef.current;
+    if (!video || (!video.currentSrc && !video.src && video.readyState === 0)) {
+      return;
+    }
+
+    video.play().then(() => {
+      setPlayRequiresInteraction(false);
+    }).catch(() => {
+      setPlayRequiresInteraction(true);
+    });
   }
 
   return (
@@ -200,6 +237,17 @@ export default function TrackableVideo({
         .filter(Boolean)
         .join(" ")}
     >
+      {poster && posterVisible ? (
+        <img
+          className="smart-video__poster"
+          src={poster}
+          alt={title || ""}
+          loading={eager || autoPlay ? "eager" : "lazy"}
+          decoding="async"
+          aria-hidden={title ? undefined : true}
+        />
+      ) : null}
+
       <video
         ref={videoRef}
         poster={poster}
@@ -209,15 +257,44 @@ export default function TrackableVideo({
         controls={controls && (isActivated || autoPlay)}
         playsInline={playsInline}
         preload={autoPlay ? "metadata" : "none"}
+        onLoadedMetadata={(event) => {
+          const video = event.currentTarget;
+          if (normalizedClipStart > 0 && !clipAppliedRef.current && Number.isFinite(video.duration) && video.duration > normalizedClipStart) {
+            clipAppliedRef.current = true;
+            video.currentTime = normalizedClipStart;
+          }
+        }}
         onCanPlay={() => {
           setIsReady(true);
+          setPosterVisible(false);
 
           if (autoPlay || isActivated) {
-            videoRef.current?.play().catch(() => {});
+            videoRef.current?.play().then(() => {
+              setPlayRequiresInteraction(false);
+            }).catch(() => {
+              setPlayRequiresInteraction(true);
+            });
           }
+        }}
+        onTimeUpdate={(event) => {
+          const video = event.currentTarget;
+          if (normalizedClipEnd == null || video.currentTime < normalizedClipEnd) {
+            return;
+          }
+
+          if (loop || autoPlay) {
+            video.currentTime = normalizedClipStart;
+            video.play().catch(() => {});
+            return;
+          }
+
+          video.pause();
+          video.currentTime = normalizedClipEnd;
         }}
         onPlay={() => {
           setIsPlaying(true);
+          setPosterVisible(false);
+          setPlayRequiresInteraction(false);
 
           if (tracked.current || !mediaId) {
             return;
@@ -233,9 +310,14 @@ export default function TrackableVideo({
         onPause={() => {
           setIsPlaying(false);
         }}
+        onWaiting={() => {
+          if (!isPlaying) {
+            setPosterVisible(Boolean(poster));
+          }
+        }}
       />
 
-      {showPlayButton && !isActivated ? (
+      {(showPlayButton && !isActivated) || playRequiresInteraction ? (
         <button
           type="button"
           className="smart-video__button"
@@ -243,7 +325,7 @@ export default function TrackableVideo({
           aria-label={title ? `Play ${title}` : "Play video"}
         >
           <span className="smart-video__button-icon" aria-hidden="true">{">"}</span>
-          <span>{title ? `Play ${title}` : "Play clip"}</span>
+          <span>{playRequiresInteraction ? "Tap to play" : title ? `Play ${title}` : "Play clip"}</span>
         </button>
       ) : null}
 

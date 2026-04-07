@@ -1,5 +1,7 @@
 import TileActionForm from "@/app/admin/tile-action-form";
-import { deleteMediaSilent, toggleFeaturedHomeSilent, toggleHiddenSilent, updateMediaAction } from "@/app/admin/actions";
+import ClipRangeEditor from "@/app/admin/clip-range-editor";
+import MediaAssetEditor from "@/app/admin/media-asset-editor";
+import { adjustManualRankSilent, deleteMediaSilent, saveMediaEditAction, toggleFeaturedHomeSilent, toggleHiddenSilent, toggleSpotlightSilent, updateMediaAction } from "@/app/admin/actions";
 import MediaThumbnail from "@/app/components/media-thumbnail";
 import TrackableVideo from "@/app/components/trackable-video";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -22,6 +24,7 @@ const LIBRARY_SORTS = new Set([
   "views_asc"
 ]);
 const PAGE_SIZE = 48;
+const RANK_STEP_OPTIONS = Array.from({ length: 10 }, (_, index) => index + 1);
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(value || 0);
@@ -53,6 +56,27 @@ function formatDurationLabel(value) {
   const minutes = Math.floor(seconds / 60);
   const remaining = seconds % 60;
   return `${minutes}:${String(remaining).padStart(2, "0")}`;
+}
+
+function formatSignedRank(value) {
+  const numeric = Math.max(-10, Math.min(10, Math.round(Number(value) || 0)));
+  return numeric > 0 ? `+${numeric}` : String(numeric);
+}
+
+function formatClipRangeLabel(startSeconds, endSeconds, durationSeconds) {
+  if (!Number.isFinite(Number(durationSeconds))) {
+    return "Full clip";
+  }
+
+  const start = Math.max(0, Math.round(Number(startSeconds) || 0));
+  const duration = Math.max(0, Math.round(Number(durationSeconds) || 0));
+  const end = Number.isFinite(Number(endSeconds)) ? Math.min(duration, Math.round(Number(endSeconds))) : duration;
+
+  if (start <= 0 && end >= duration) {
+    return "Full clip";
+  }
+
+  return `${formatDurationLabel(start)} to ${formatDurationLabel(end)}`;
 }
 
 function formatFileSize(bytes) {
@@ -279,7 +303,7 @@ export default async function AdminMediaPage({ searchParams }) {
   const pageItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const selectedItem = filteredItems.find((item) => item.id === editId) || null;
   const baseParams = { q: params.q, view, status, sort, album, tileSize, page: currentPage, edit: editId };
-  const spotlightLeader = homepageMedia.home.heroVideo || null;
+  const spotlightLeader = homepageMedia.home.spotlightItem || homepageMedia.home.heroVideo || null;
   const rotationIds = new Set((homepageMedia.home.featuredVideos || []).map((item) => item.id));
 
   return (
@@ -304,6 +328,7 @@ export default async function AdminMediaPage({ searchParams }) {
           <strong>
             {saveState === "success" && "Media changes saved."}
             {saveState === "deleted" && "Media removed."}
+            {saveState === "edited" && "Edited asset saved."}
             {saveState === "featured" && "Item added to homepage features."}
             {saveState === "unfeatured" && "Item removed from homepage features."}
             {saveState === "hidden" && "Item moved to Hidden."}
@@ -414,21 +439,41 @@ export default async function AdminMediaPage({ searchParams }) {
                 <article key={item.id} id={`tile-${item.id}`} className={`admin-library-tile${selectedItem?.id === item.id ? " admin-library-tile--active" : ""}${item.featuredHome ? " admin-library-tile--featured" : ""}`}>
                   <div className="admin-library-tile__preview">
                     <a href={`${tileHref}#tile-${item.id}`} className="admin-library-tile__preview-link">
-                      <MediaThumbnail
-                        className="admin-library-tile__media"
-                        kind={item.kind}
-                        alt={item.title || ""}
-                        storedThumbnailSrc={item.storedThumbnailUrl}
-                        fallbackImageSrc={item.placeholderThumbnailUrl || getThumbnailSrc(item)}
-                        videoSrc={item.playbackUrl}
-                        durationSeconds={item.durationSeconds}
-                        thumbnailBackfillUrl={item.thumbnailBackfillUrl}
-                        cacheKey={`${item.id || item.url || "media"}-${item.updatedAt || item.createdAt || "0"}`}
-                      />
+                      {item.kind === "video" && item.playbackUrl ? (
+                        <TrackableVideo
+                          className="admin-library-tile__media"
+                          src={item.url}
+                          playbackUrl={item.playbackUrl}
+                          poster={getThumbnailSrc(item)}
+                          title={item.title}
+                          mediaId={item.id}
+                          autoPlay
+                          loop
+                          muted={!isSpotlight}
+                          controls={false}
+                          eager={isSpotlight}
+                          showPlayButton={false}
+                          clipStartSeconds={item.clipStartSeconds}
+                          clipEndSeconds={item.clipEndSeconds}
+                        />
+                      ) : (
+                        <MediaThumbnail
+                          className="admin-library-tile__media"
+                          kind={item.kind}
+                          alt={item.title || ""}
+                          storedThumbnailSrc={item.storedThumbnailUrl}
+                          fallbackImageSrc={item.placeholderThumbnailUrl || getThumbnailSrc(item)}
+                          videoSrc={item.playbackUrl}
+                          durationSeconds={item.durationSeconds}
+                          thumbnailBackfillUrl={item.thumbnailBackfillUrl}
+                          cacheKey={`${item.id || item.url || "media"}-${item.updatedAt || item.createdAt || "0"}`}
+                        />
+                      )}
                       <div className="admin-library-tile__overlay" />
                       <div className="admin-library-tile__badges">
                         <span>{item.kind}</span>
                         {item.kind === "video" ? <span>{formatDurationLabel(item.durationSeconds)}</span> : null}
+                        {item.kind === "video" ? <span>{formatClipRangeLabel(item.clipStartSeconds, item.clipEndSeconds, item.durationSeconds)}</span> : null}
                         {item.featuredHome ? <span className="admin-library-badge--featured">Starred</span> : null}
                         {isSpotlight ? <span className="admin-library-badge--spotlight">Spotlight</span> : null}
                         {!isSpotlight && isInRotation ? <span className="admin-library-badge--rotation">Rotation</span> : null}
@@ -441,6 +486,13 @@ export default async function AdminMediaPage({ searchParams }) {
                       <input type="hidden" name="featuredHome" value={item.featuredHome ? "false" : "true"} />
                       <button type="submit" className={`admin-library-tile__star${item.featuredHome ? " admin-library-tile__star--on" : ""}`} title={item.featuredHome ? "Remove star" : "Star for homepage"}>
                         {item.featuredHome ? "★" : "☆"}
+                      </button>
+                    </TileActionForm>
+                    <TileActionForm action={toggleSpotlightSilent} className="admin-library-tile__spotlight-form">
+                      <input type="hidden" name="id" value={item.id} />
+                      <input type="hidden" name="spotlightHome" value={isSpotlight ? "false" : "true"} />
+                      <button type="submit" className={`admin-library-tile__spotlight${isSpotlight ? " admin-library-tile__spotlight--on" : ""}`} title={isSpotlight ? "Clear spotlight" : "Make homepage spotlight"}>
+                        ◉
                       </button>
                     </TileActionForm>
                   </div>
@@ -458,6 +510,32 @@ export default async function AdminMediaPage({ searchParams }) {
                       <span>{item.mimeType}</span>
                       {item.albumNames?.[0] ? <span>{item.albumNames[0]}</span> : null}
                     </div>
+
+                    {item.kind === "video" ? (
+                      <div className="admin-library-rank-box">
+                        <div className="admin-library-rank-box__header">
+                          <span>Rank</span>
+                          <strong>{formatSignedRank(item.manualRank)}</strong>
+                        </div>
+                        <TileActionForm action={adjustManualRankSilent} className="admin-library-rank-box__controls">
+                          <input type="hidden" name="id" value={item.id} />
+                          <label className="admin-library-rank-box__step">
+                            <span>Step</span>
+                            <select name="rankStep" defaultValue="1" aria-label={`Rank step for ${item.title || "video"}`}>
+                              {RANK_STEP_OPTIONS.map((value) => (
+                                <option key={value} value={value}>{value}</option>
+                              ))}
+                            </select>
+                          </label>
+                          <button type="submit" name="rankDirection" value="down" className="admin-library-rank-box__button" title="Lower rotation rank">
+                            ↓
+                          </button>
+                          <button type="submit" name="rankDirection" value="up" className="admin-library-rank-box__button" title="Raise rotation rank">
+                            ↑
+                          </button>
+                        </TileActionForm>
+                      </div>
+                    ) : null}
 
                     <div className="admin-library-tile__actions">
                       <a className="admin-ghost-button" href={`${tileHref}#tile-${item.id}`}>Edit</a>
@@ -509,6 +587,8 @@ export default async function AdminMediaPage({ searchParams }) {
                   playbackUrl={selectedItem.playbackUrl}
                   poster={getThumbnailSrc(selectedItem)}
                   title={selectedItem.title}
+                  clipStartSeconds={selectedItem.clipStartSeconds}
+                  clipEndSeconds={selectedItem.clipEndSeconds}
                   controls
                 />
               ) : (
@@ -538,104 +618,149 @@ export default async function AdminMediaPage({ searchParams }) {
                 {selectedItem.featuredHome ? <span className="admin-pill admin-pill--accent">Starred</span> : null}
                 {selectedItem.id === spotlightLeader?.id ? <span className="admin-pill admin-pill--accent">Spotlight leader</span> : null}
                 {rotationIds.has(selectedItem.id) && selectedItem.id !== spotlightLeader?.id ? <span className="admin-pill">In rotation</span> : null}
+                {selectedItem.kind === "video" ? <span className="admin-pill">{formatClipRangeLabel(selectedItem.clipStartSeconds, selectedItem.clipEndSeconds, selectedItem.durationSeconds)}</span> : null}
                 {selectedItem.isHidden ? <span className="admin-pill">Hidden</span> : null}
                 {selectedItem.overrideStatus ? <span className="admin-pill">Override: {selectedItem.overrideStatus}</span> : null}
               </div>
             </div>
 
-            <form action={updateMediaAction} className="admin-library-editor admin-library-editor__form">
-              <input type="hidden" name="id" value={selectedItem.id} />
-              <input type="hidden" name="returnTo" value={buildMediaHref(baseParams, { edit: selectedItem.id })} />
+            <div className="admin-library-editor__side">
+              <form action={saveMediaEditAction} className="admin-library-editor admin-library-editor__form">
+                <input type="hidden" name="id" value={selectedItem.id} />
+                <input type="hidden" name="returnTo" value={buildMediaHref(baseParams, { edit: selectedItem.id })} />
 
-              <div className="admin-grid admin-grid--compact admin-grid--triple">
-                <label className="admin-field">
-                  <span>Title</span>
-                  <input name="title" defaultValue={selectedItem.title} />
-                </label>
-                <label className="admin-field">
-                  <span>Status</span>
-                  <select name="workflowStatus" defaultValue={selectedItem.workflowStatus || selectedItem.moderationStatus || "approved"}>
-                    <option value="approved">approved</option>
-                    <option value="review">review</option>
-                    <option value="rejected">rejected</option>
-                  </select>
-                </label>
-                <label className="admin-field">
-                  <span>Override</span>
-                  <select name="overrideStatus" defaultValue={selectedItem.overrideStatus || ""}>
-                    <option value="">none</option>
-                    <option value="approved">approved</option>
-                    <option value="pending">pending</option>
-                    <option value="rejected">rejected</option>
-                  </select>
-                </label>
-              </div>
-
-              <label className="admin-field">
-                <span>Description</span>
-                <textarea name="description" rows={3} defaultValue={selectedItem.description || ""} />
-              </label>
-
-              <label className="admin-field">
-                <span>Tags</span>
-                <input name="tags" defaultValue={selectedItem.tags || ""} />
-              </label>
-
-              <div className="admin-grid admin-grid--compact admin-grid--triple">
-                <label className="admin-field">
-                  <span>Override by</span>
-                  <input name="overrideBy" defaultValue={selectedItem.overrideBy || ""} placeholder="Operator name" />
-                </label>
-                <label className="admin-field">
-                  <span>Manual rank</span>
-                  <input name="manualRank" defaultValue={selectedItem.manualRank || 0} />
-                </label>
-                <label className="admin-field">
-                  <span>Home slot</span>
-                  <input name="homeSlot" defaultValue={selectedItem.homeSlot || ""} placeholder="Optional" />
-                </label>
-              </div>
-
-              <label className="admin-field">
-                <span>Notes</span>
-                <textarea name="overrideNotes" rows={2} defaultValue={selectedItem.overrideNotes || ""} />
-              </label>
-
-              <div className="admin-field">
-                <span>Albums</span>
-                <div className="admin-album-selector">
-                  {albums.length ? (
-                    albums.map((entry) => (
-                      <label key={entry.slug} className="admin-album-chip">
-                        <input name="albumSlugs" type="checkbox" value={entry.slug} defaultChecked={(selectedItem.albumSlugs || []).includes(entry.slug)} />
-                        <span>{entry.name}</span>
-                      </label>
-                    ))
-                  ) : (
-                    <p className="admin-note">Create albums from the dashboard to start organizing library views.</p>
-                  )}
+                <div className="media-asset-editor__header">
+                  <div>
+                    <p className="admin-kicker">Asset Editor</p>
+                    <h3>Open the real editor</h3>
+                    <p>Save a newly processed version of this file directly from the media library.</p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="admin-check-row">
-                <label className="admin-check">
-                  <input name="featuredHome" type="checkbox" defaultChecked={selectedItem.featuredHome} />
-                  <span>Star for homepage rotation</span>
-                </label>
-                <label className="admin-check">
-                  <input name="active" type="checkbox" defaultChecked={selectedItem.active !== false} />
-                  <span>Active</span>
-                </label>
-                <label className="admin-check">
-                  <input name="isHidden" type="checkbox" defaultChecked={selectedItem.isHidden === true} />
-                  <span>Hidden</span>
-                </label>
-              </div>
+                <MediaAssetEditor item={selectedItem} posterSrc={getThumbnailSrc(selectedItem)} />
 
-              <div className="admin-media-actions">
-                <button type="submit">Save item</button>
-              </div>
-            </form>
+                <div className="admin-media-actions">
+                  <button type="submit">Save edited asset</button>
+                </div>
+              </form>
+
+              <form action={updateMediaAction} className="admin-library-editor admin-library-editor__form">
+                <input type="hidden" name="id" value={selectedItem.id} />
+                <input type="hidden" name="returnTo" value={buildMediaHref(baseParams, { edit: selectedItem.id })} />
+
+                <div className="media-asset-editor__header">
+                  <div>
+                    <p className="admin-kicker">Metadata</p>
+                    <h3>Item details</h3>
+                    <p>Star state, spotlight status, albums, visibility, and metadata stay together here.</p>
+                  </div>
+                </div>
+
+                <div className="admin-grid admin-grid--compact admin-grid--triple">
+                  <label className="admin-field">
+                    <span>Title</span>
+                    <input name="title" defaultValue={selectedItem.title} />
+                  </label>
+                  <label className="admin-field">
+                    <span>Status</span>
+                    <select name="workflowStatus" defaultValue={selectedItem.workflowStatus || selectedItem.moderationStatus || "approved"}>
+                      <option value="approved">approved</option>
+                      <option value="review">review</option>
+                      <option value="rejected">rejected</option>
+                    </select>
+                  </label>
+                  <label className="admin-field">
+                    <span>Override</span>
+                    <select name="overrideStatus" defaultValue={selectedItem.overrideStatus || ""}>
+                      <option value="">none</option>
+                      <option value="approved">approved</option>
+                      <option value="pending">pending</option>
+                      <option value="rejected">rejected</option>
+                    </select>
+                  </label>
+                </div>
+
+                <label className="admin-field">
+                  <span>Description</span>
+                  <textarea name="description" rows={3} defaultValue={selectedItem.description || ""} />
+                </label>
+
+                <label className="admin-field">
+                  <span>Tags</span>
+                  <input name="tags" defaultValue={selectedItem.tags || ""} />
+                </label>
+
+                <div className="admin-grid admin-grid--compact admin-grid--triple">
+                  <label className="admin-field">
+                    <span>Override by</span>
+                    <input name="overrideBy" defaultValue={selectedItem.overrideBy || ""} placeholder="Operator name" />
+                  </label>
+                  <label className="admin-field">
+                    <span>Manual rank</span>
+                    <input name="manualRank" type="number" min="-10" max="10" step="1" defaultValue={selectedItem.manualRank || 0} />
+                  </label>
+                  <label className="admin-field">
+                    <span>Home slot</span>
+                    <input name="homeSlot" defaultValue={selectedItem.homeSlot || ""} placeholder="Optional" />
+                  </label>
+                </div>
+
+                <label className="admin-field">
+                  <span>Notes</span>
+                  <textarea name="overrideNotes" rows={2} defaultValue={selectedItem.overrideNotes || ""} />
+                </label>
+
+                <div className="admin-field">
+                  <span>Albums</span>
+                  <div className="admin-album-selector">
+                    {albums.length ? (
+                      albums.map((entry) => (
+                        <label key={entry.slug} className="admin-album-chip">
+                          <input name="albumSlugs" type="checkbox" value={entry.slug} defaultChecked={(selectedItem.albumSlugs || []).includes(entry.slug)} />
+                          <span>{entry.name}</span>
+                        </label>
+                      ))
+                    ) : (
+                      <p className="admin-note">Create albums from the dashboard to start organizing library views.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="admin-check-row">
+                  <label className="admin-check">
+                    <input name="featuredHome" type="checkbox" defaultChecked={selectedItem.featuredHome} />
+                    <span>Star for homepage rotation</span>
+                  </label>
+                  <label className="admin-check">
+                    <input name="spotlightHome" type="checkbox" defaultChecked={selectedItem.spotlightHome === true} />
+                    <span>Homepage spotlight</span>
+                  </label>
+                  <label className="admin-check">
+                    <input name="active" type="checkbox" defaultChecked={selectedItem.active !== false} />
+                    <span>Active</span>
+                  </label>
+                  <label className="admin-check">
+                    <input name="isHidden" type="checkbox" defaultChecked={selectedItem.isHidden === true} />
+                    <span>Hidden</span>
+                  </label>
+                </div>
+
+                {selectedItem.kind === "video" && selectedItem.durationSeconds ? (
+                  <div className="admin-field">
+                    <span>Featured clip range</span>
+                    <ClipRangeEditor
+                      durationSeconds={selectedItem.durationSeconds}
+                      defaultStartSeconds={selectedItem.clipStartSeconds}
+                      defaultEndSeconds={selectedItem.clipEndSeconds ?? selectedItem.durationSeconds}
+                    />
+                  </div>
+                ) : null}
+
+                <div className="admin-media-actions">
+                  <button type="submit">Save item</button>
+                </div>
+              </form>
+            </div>
           </div>
 
           <div className="admin-board-grid">
