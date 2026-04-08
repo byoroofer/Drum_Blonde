@@ -513,3 +513,30 @@ pm run db:setup attempt.
   3. Run `cmd /c npm run build`.
   4. Hard-refresh `/admin` and `/` and confirm the old stacked homepage-features list returns and five-minute rotation stops.
 - Rollback verification: Confirm the tile grid no longer appears in `/admin`, confirm starred/spotlight ordering returns to the prior non-rotating behavior, and confirm both validation commands pass.
+
+## 2026-04-08T00:43:56.0000000-05:00 | Deploy homepage rotation control updates to production
+
+- Timestamp: `2026-04-08T00:43:56.0000000-05:00`
+- Change summary: Committed the isolated homepage/admin control updates as `0a0d55472320a0b4894b8e865aa88b18ff759b47`, pushed them to `origin/main`, confirmed Vercel production deployment `https://drum-blonde-fc3hvt9g1-byoroofers-projects.vercel.app` reached `Ready`, and verified `https://drumblonde.tjware.me/` returned `HTTP/1.1 200 OK`.
+- Files changed: `app/admin/media/page.js`, `app/admin/page.js`, `app/globals.css`, `lib/media-repo.js`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`, `.agent/decisions.md`, `.agent/open_issues.md`
+- Commands run: `git commit -m "Refine homepage video rotation controls"`; `git push origin main`; `cmd /c npx vercel ls`; escalated `cmd /c npx vercel ls`; escalated `curl.exe -I --ssl-no-revoke https://drumblonde.tjware.me/`
+- Rollback steps:
+  1. Revert commit `0a0d55472320a0b4894b8e865aa88b18ff759b47`.
+  2. Push the revert to `origin/main`.
+  3. Wait for the replacement Vercel production deployment to reach `Ready`.
+  4. Reopen `https://drumblonde.tjware.me/admin` and `https://drumblonde.tjware.me/admin/media` and confirm the new tile grid, spotlight-pool behavior, and thumbnail-only media-library tiles are gone.
+- Rollback verification: Confirm the new production deployment is no longer active, confirm the custom domain still returns `200 OK`, and confirm the live admin homepage-features section and media library have returned to the prior behavior.
+
+## 2026-04-08T02:15:44.0075055-05:00 | Route-backed derived-asset media editors
+
+- Timestamp: `2026-04-08T02:15:44.0075055-05:00`
+- Change summary: Added `/admin/media/edit/[id]` plus admin-only source/edit API routes, replaced the old inline asset-save editor with dedicated Fabric/ffmpeg.wasm editors, rewired `/admin/media` tile `Edit` links to the route editor, and changed edit persistence to create derived media assets instead of overwriting originals.
+- Files changed: `package.json`, `package-lock.json`, `app/admin/media/page.js`, `app/admin/media/edit/[id]/page.js`, `app/admin/media/edit/[id]/loading.js`, `app/admin/media-asset-editor.jsx`, `app/admin/media-editor-shell.jsx`, `app/admin/image-media-editor.jsx`, `app/admin/video-media-editor.jsx`, `app/api/admin/media/[id]/source/route.js`, `app/api/admin/media/[id]/edits/route.js`, `app/globals.css`, `lib/media-repo.js`, `.agent/decisions.md`, `.agent/open_issues.md`, `.agent/session_handoff.md`, `.agent/work_log.md`
+- Commands run: `cmd /c npm install fabric @ffmpeg/ffmpeg @ffmpeg/util`; escalated rerun of the same install; `cmd /c npm run build`; `cmd /c npx tsc --noEmit`
+- Rollback steps:
+  1. Restore the previous versions of `package.json`, `package-lock.json`, `app/admin/media/page.js`, `app/admin/media-asset-editor.jsx`, `app/globals.css`, and `lib/media-repo.js`.
+  2. Remove `app/admin/media/edit/[id]/page.js`, `app/admin/media/edit/[id]/loading.js`, `app/admin/media-editor-shell.jsx`, `app/admin/image-media-editor.jsx`, `app/admin/video-media-editor.jsx`, `app/api/admin/media/[id]/source/route.js`, and `app/api/admin/media/[id]/edits/route.js`.
+  3. Run `cmd /c npm run build`.
+  4. Run `cmd /c npx tsc --noEmit`.
+  5. Browser-check `/admin/media` and `/admin/media/edit/[id]` to confirm tile `Edit` returns to the old inline flow and no derived-save route remains.
+- Rollback verification: Confirm `/admin/media` tile `Edit` no longer opens the dedicated route, confirm edited saves are no longer non-destructive derived assets, and confirm both validation commands pass after the restore.

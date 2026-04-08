@@ -181,3 +181,13 @@ Record durable technical and operational decisions here. Prefer one decision blo
 - Rationale: Rotating after ranking preserves operator intent while preventing the homepage from feeling permanently static.
 - Consequence: The active homepage order now changes at five-minute time boundaries, so admin verification should account for time-bucket transitions when checking behavior.
 - Revisit when: The user wants a different cadence, true randomness, or persistent per-visitor rotation state instead of shared time-bucket rotation.
+
+## 2026-04-08 | Active | Admin media edits must create derived assets and open on a dedicated editor route
+
+- Date: `2026-04-08`
+- Status: Active
+- Decision: `/admin/media` tile `Edit` actions should open a dedicated route-backed editor at `/admin/media/edit/[id]`, and all saved image/video edits must create new derived media assets instead of replacing the original stored file.
+- Context: The user explicitly required direct-linkable full-screen editing, original preservation, and correct media-library refresh behavior for edited assets.
+- Rationale: Route-backed editors support direct linking and cleaner state handling, while derived-asset saves remove the destructive overwrite risk from the prior editor flow.
+- Consequence: Edited outputs now appear as new library items linked back to the source asset through logged metadata plus a best-effort `media_versions` record, and future editor/save paths must preserve that non-destructive model.
+- Revisit when: The project adopts first-class revision tables/columns, background media jobs, or a more formal asset-version browser in the admin UI.

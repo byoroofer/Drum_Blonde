@@ -1,7 +1,6 @@
 import TileActionForm from "@/app/admin/tile-action-form";
 import ClipRangeEditor from "@/app/admin/clip-range-editor";
-import MediaAssetEditor from "@/app/admin/media-asset-editor";
-import { adjustManualRankSilent, deleteMediaSilent, saveMediaEditAction, toggleFeaturedHomeSilent, toggleHiddenSilent, toggleSpotlightSilent, updateMediaAction } from "@/app/admin/actions";
+import { adjustManualRankSilent, deleteMediaSilent, toggleFeaturedHomeSilent, toggleHiddenSilent, toggleSpotlightSilent, updateMediaAction } from "@/app/admin/actions";
 import MediaThumbnail from "@/app/components/media-thumbnail";
 import TrackableVideo from "@/app/components/trackable-video";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -247,6 +246,16 @@ function buildAssetHref(item) {
   return item.playbackUrl || item.publicUrl || item.url || "#";
 }
 
+function buildEditorRouteHref(itemId, returnTo) {
+  const params = new URLSearchParams();
+  if (returnTo) {
+    params.set("returnTo", returnTo);
+  }
+
+  const query = params.toString();
+  return query ? `/admin/media/edit/${itemId}?${query}` : `/admin/media/edit/${itemId}`;
+}
+
 function buildLibraryCounts(items, showHiddenMedia, albumSlug) {
   const albumItems = items.filter((item) => matchesAlbum(item, albumSlug));
   return {
@@ -432,6 +441,7 @@ export default async function AdminMediaPage({ searchParams }) {
           {pageItems.length ? (
             pageItems.map((item) => {
               const tileHref = buildMediaHref(baseParams, { edit: item.id, page: currentPage });
+              const routeEditorHref = buildEditorRouteHref(item.id, `${tileHref}#tile-${item.id}`);
               const isSpotlight = item.spotlightHome === true;
               const isSpotlightLeader = item.id === spotlightLeader?.id;
               const isInRotation = rotationIds.has(item.id);
@@ -459,6 +469,7 @@ export default async function AdminMediaPage({ searchParams }) {
                         {item.featuredHome ? <span className="admin-library-badge--featured">Starred</span> : null}
                         {isSpotlight ? <span className="admin-library-badge--spotlight">{isSpotlightLeader ? "Spotlight" : "Spotlight pool"}</span> : null}
                         {!isSpotlight && isInRotation ? <span className="admin-library-badge--rotation">Rotation</span> : null}
+                        {item.isDerived ? <span className="admin-library-badge--derived">{item.editType || "Derived edit"}</span> : null}
                         {item.isHidden ? <span className="admin-library-badge--hidden">Hidden</span> : null}
                       </div>
                     </a>
@@ -491,6 +502,7 @@ export default async function AdminMediaPage({ searchParams }) {
                       <span>{item.source}</span>
                       <span>{item.mimeType}</span>
                       {item.albumNames?.[0] ? <span>{item.albumNames[0]}</span> : null}
+                      {item.derivedFromAssetId ? <span>From {item.derivedFromTitle || item.derivedFromAssetId.slice(0, 8)}</span> : null}
                     </div>
 
                     {item.kind === "video" ? (
@@ -520,7 +532,7 @@ export default async function AdminMediaPage({ searchParams }) {
                     ) : null}
 
                     <div className="admin-library-tile__actions">
-                      <a className="admin-ghost-button" href={`${tileHref}#tile-${item.id}`}>Edit</a>
+                      <a className="admin-ghost-button" href={routeEditorHref}>Edit</a>
                       <TileActionForm action={toggleHiddenSilent} style={{ display: "contents" }}>
                         <input type="hidden" name="id" value={item.id} />
                         <input type="hidden" name="isHidden" value={item.isHidden ? "false" : "true"} />
@@ -602,30 +614,36 @@ export default async function AdminMediaPage({ searchParams }) {
                 {selectedItem.spotlightHome === true && selectedItem.id !== spotlightLeader?.id ? <span className="admin-pill">In spotlight pool</span> : null}
                 {rotationIds.has(selectedItem.id) && selectedItem.id !== spotlightLeader?.id ? <span className="admin-pill">In rotation</span> : null}
                 {selectedItem.kind === "video" ? <span className="admin-pill">{formatClipRangeLabel(selectedItem.clipStartSeconds, selectedItem.clipEndSeconds, selectedItem.durationSeconds)}</span> : null}
+                {selectedItem.isDerived ? <span className="admin-pill">Derived {selectedItem.editType || "edit"}</span> : null}
+                {selectedItem.derivedFromAssetId ? <span className="admin-pill">Original {selectedItem.derivedFromTitle || selectedItem.derivedFromAssetId.slice(0, 8)}</span> : null}
+                {selectedItem.latestDerivedAssetId ? <span className="admin-pill">Latest derived saved</span> : null}
                 {selectedItem.isHidden ? <span className="admin-pill">Hidden</span> : null}
                 {selectedItem.overrideStatus ? <span className="admin-pill">Override: {selectedItem.overrideStatus}</span> : null}
               </div>
             </div>
 
             <div className="admin-library-editor__side">
-              <form action={saveMediaEditAction} className="admin-library-editor admin-library-editor__form">
-                <input type="hidden" name="id" value={selectedItem.id} />
-                <input type="hidden" name="returnTo" value={buildMediaHref(baseParams, { edit: selectedItem.id })} />
-
+              <section className="admin-library-editor admin-library-editor__form">
                 <div className="media-asset-editor__header">
                   <div>
                     <p className="admin-kicker">Asset Editor</p>
-                    <h3>Open the real editor</h3>
-                    <p>Save a newly processed version of this file directly from the media library.</p>
+                    <h3>Open the full-screen editor</h3>
+                    <p>Launch the dedicated editor route to save a derived image or video while keeping the original untouched.</p>
                   </div>
                 </div>
 
-                <MediaAssetEditor item={selectedItem} posterSrc={getThumbnailSrc(selectedItem)} />
-
                 <div className="admin-media-actions">
-                  <button type="submit">Save edited asset</button>
+                  <a
+                    className="admin-ghost-button"
+                    href={buildEditorRouteHref(selectedItem.id, buildMediaHref(baseParams, { edit: selectedItem.id }))}
+                  >
+                    Open {selectedItem.kind === "video" ? "video" : "photo"} editor
+                  </a>
+                  <a className="admin-ghost-button" href={buildAssetHref(selectedItem)} target="_blank" rel="noreferrer">
+                    Open source asset
+                  </a>
                 </div>
-              </form>
+              </section>
 
               <form action={updateMediaAction} className="admin-library-editor admin-library-editor__form">
                 <input type="hidden" name="id" value={selectedItem.id} />

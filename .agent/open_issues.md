@@ -89,3 +89,11 @@ Track unresolved bugs, risks, and follow-ups. Close or update entries when the s
 - Context: The admin homepage-features section now renders a 3-column thumbnail tile grid and homepage video order now rotates on five-minute buckets, but the change has only been verified by `cmd /c npx tsc --noEmit` and `cmd /c npm run build`.
 - Risk: Without a browser pass, there is still a chance the tile cropping, edge-to-edge layout, mobile wrapping, or time-boundary rotation behavior differs from the intended design.
 - Next action: Browser-test `/admin` and `/` on desktop and mobile, then check again after the next five-minute boundary to confirm the grid layout and active homepage order rotate cleanly.
+
+## ISSUE-2026-04-08-001 | New route-backed media editors still need end-to-end browser save verification
+
+- Status: Open
+- Severity: Medium
+- Context: `/admin/media/edit/[id]` now launches a dedicated Fabric-based image editor and a browser-first ffmpeg.wasm video editor, and saves now create derived assets through `/api/admin/media/[id]/edits`, but validation so far only covers `cmd /c npm run build` and `cmd /c npx tsc --noEmit`.
+- Risk: Without a real browser pass, image-canvas loading, ffmpeg.wasm export, cover-frame capture, mobile controls, or post-save library refresh could still fail against live signed-storage assets even though the server build succeeds.
+- Next action: Browser-test one real image edit and one short real video edit from `/admin/media`, confirm the editor route loads directly, save succeeds, the library shows the derived asset metadata, and the original asset remains unchanged.
