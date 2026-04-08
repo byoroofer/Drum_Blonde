@@ -2,6 +2,7 @@ import GooglePhotosImportPanel from "@/app/admin/google-photos-import-panel";
 import RemoteUrlImportPanel from "@/app/admin/remote-url-import-panel";
 import { createAlbumAction, logoutAction, updateFilterConfigAction } from "@/app/admin/actions";
 import UploadWidget from "@/app/admin/upload-widget";
+import MediaThumbnail from "@/app/components/media-thumbnail";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getGooglePhotosSetupStatus, getStorageSetupStatus } from "@/lib/env";
 import { getAdminAlbums, getAdminMedia, getDashboardSummary, getHomepageMedia, getMediaEngineConfig } from "@/lib/media-repo";
@@ -37,6 +38,10 @@ function SummaryCard({ label, value, tone = "default" }) {
       <strong>{value}</strong>
     </article>
   );
+}
+
+function getThumbnailSrc(item) {
+  return item.adminThumbnailUrl || item.storedThumbnailUrl || item.thumbnailUrl || item.posterUrl || "/images/brooke-tiktok-avatar.jpg";
 }
 
 function DisclosureCard({ id, kicker, title, note, badge, defaultOpen = true, children }) {
@@ -90,7 +95,8 @@ export default async function AdminPage({ searchParams }) {
   ]);
 
   const rotationItems = (homepageMedia.home.featuredVideos || []).filter(Boolean);
-  const spotlightLeader = homepageMedia.home.heroVideo || null;
+  const spotlightLeader = homepageMedia.home.spotlightItem || homepageMedia.home.heroVideo || null;
+  let rotationCounter = 0;
   const overriddenItems = mediaItems
     .filter((item) => item.overrideStatus || item.overrideNotes)
     .sort((left, right) => new Date(right.updatedAt || right.createdAt || 0).getTime() - new Date(left.updatedAt || left.createdAt || 0).getTime())
@@ -184,10 +190,50 @@ export default async function AdminPage({ searchParams }) {
         <div className="admin-board-grid">
           <DisclosureCard
             kicker="Homepage Features"
-            title="Starred videos now drive homepage rotation"
-            note="Any starred video enters the rotation pool automatically. The starred video with the highest view count stays pinned in the spotlight slot."
+            title="Homepage video tiles rotate every five minutes"
+            note="Any starred video enters the homepage grid automatically. Spotlight-marked videos rotate through the top spotlight slot every five minutes in ranked order. If no spotlight videos are selected, the most-viewed starred video takes that slot."
             badge={rotationItems.length ? `${rotationItems.length} in rotation` : "No starred videos"}
           >
+            <div className="admin-homepage-feature-grid">
+              {rotationItems.length ? (
+                rotationItems.map((item) => {
+                  const isSpotlightSelection = item.spotlightHome === true;
+                  const isSpotlightLeader = item.id === spotlightLeader?.id;
+                  const rotationLabel = isSpotlightSelection ? "◉" : String((rotationCounter += 1));
+
+                  return (
+                    <a
+                      key={`tile-${item.id}`}
+                      className={`admin-homepage-feature-tile${isSpotlightLeader ? " admin-homepage-feature-tile--leader" : ""}`}
+                      href={`/admin/media?view=videos&edit=${encodeURIComponent(item.id)}`}
+                    >
+                      <MediaThumbnail
+                        className="admin-homepage-feature-tile__media"
+                        kind={item.kind}
+                        alt={item.title || ""}
+                        storedThumbnailSrc={item.storedThumbnailUrl}
+                        fallbackImageSrc={item.placeholderThumbnailUrl || getThumbnailSrc(item)}
+                        videoSrc={item.playbackUrl}
+                        durationSeconds={item.durationSeconds}
+                        thumbnailBackfillUrl={item.thumbnailBackfillUrl}
+                        cacheKey={`${item.id || item.url || "media"}-${item.updatedAt || item.createdAt || "0"}`}
+                      />
+                      <div className="admin-homepage-feature-tile__overlay">
+                        <span className={`admin-homepage-feature-tile__marker${isSpotlightSelection ? " admin-homepage-feature-tile__marker--spotlight" : ""}`}>{rotationLabel}</span>
+                        <span className="admin-homepage-feature-tile__status">{isSpotlightLeader ? "Current spotlight" : isSpotlightSelection ? "Spotlight pool" : "Rotation"}</span>
+                      </div>
+                      <div className="admin-homepage-feature-tile__footer">
+                        <strong>{item.title}</strong>
+                        <small>{formatNumber(item.views)} views · {formatNumber(item.plays)} plays</small>
+                      </div>
+                    </a>
+                  );
+                })
+              ) : (
+                <p className="admin-note">No starred videos are currently available for homepage rotation.</p>
+              )}
+            </div>
+
             {spotlightLeader ? (
               <article className="admin-top-card admin-top-card--spotlight">
                 <div>

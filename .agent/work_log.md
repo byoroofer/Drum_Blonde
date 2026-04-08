@@ -354,3 +354,198 @@ pm run db:setup in recovered source.
 - Rationale: A hybrid approach fixes existing missing thumbnails immediately without redesigning the UI, while still preserving fast durable thumbnails for subsequent loads and for newly ingested uploads.
 - Rollback plan: Remove `app/components/media-thumbnail.jsx`, restore the previous versions of `app/admin/media/page.js`, `app/globals.css`, `lib/media-repo.js`, and `core/video.ts`, then rerun `cmd /c npm run build` and `cmd /c npx tsc --noEmit`.
 - Next steps: Browser-verify `/admin/media` with several Supabase-hosted videos to confirm first-load frame previews appear, then confirm subsequent loads swap to the stored JPEG thumbnail without affecting image tiles or admin actions.
+
+## 2026-04-06T14:29:00.0000000-05:00 | Push and deploy video thumbnail fix to production
+
+- Timestamp: `2026-04-06T14:29:00.0000000-05:00`
+- Task: Deploy the admin media-library video thumbnail fix to the live Drum Blonde site.
+- Context: The user was checking `drumblonde.tjware.me/admin/media` and still seeing the old placeholder-only behavior because the fix existed only in the local repo until it was pushed and built on Vercel.
+- Files changed: `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: `git add -- .agent/decisions.md .agent/rollback_log.md .agent/session_handoff.md .agent/work_log.md app/admin/media/page.js app/components/media-thumbnail.jsx app/globals.css core/video.ts lib/media-repo.js`; `git commit -m "Fix video thumbnails in admin media library"`; `git push origin main`; `git rev-parse HEAD`; `cmd /c npx vercel ls`
+- Errors encountered: A one-off thumbnail backfill script hit sandbox `spawn EPERM` when trying to launch ffmpeg from inside Node, but the actual application fix was already committed and deployed through Vercel successfully.
+- Fix or decision: Pushed commit `13bf20c6eeb6fe64af5256e084db0bddc76edb5d` to `origin/main`; Vercel built production deployment `https://drum-blonde-b6r7wz73d-byoroofers-projects.vercel.app`, which reached `Ready`.
+- Rationale: The user was validating against the live domain, so deployment was required before the fix could be observed there.
+- Rollback plan: Revert commit `13bf20c6eeb6fe64af5256e084db0bddc76edb5d`, push the revert to `main`, and wait for the replacement production deployment to reach `Ready`.
+- Next steps: Hard-refresh the live admin media library, confirm the placeholder tiles are replaced by real video thumbnails, and verify at least one affected Google Photos `.MOV` item now loads a real frame preview on the live deployment.
+
+## 2026-04-06T15:39:51.9529305-05:00 | Add explicit spotlight control and featured clip ranges
+
+- Timestamp: `2026-04-06T15:39:51.9529305-05:00`
+- Task: Add an explicit homepage spotlight control in the admin media library and let operators trim featured videos to a start/end clip range.
+- Context: The user wanted the old spotlight control back in the media library, wanted only one spotlight item at a time with automatic fallback to the most-viewed featured video, and needed slider-based clip trimming so raw uploads can be featured as shorter homepage excerpts.
+- Files changed: `app/admin/actions.js`, `app/admin/clip-range-editor.jsx`, `app/admin/media/page.js`, `app/admin/page.js`, `app/components/trackable-video.jsx`, `app/globals.css`, `app/page.js`, `lib/media-repo.js`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/decisions.md`, `.agent/session_handoff.md`
+- Commands run: targeted `rg`/`Get-Content` reads across `app/admin/media/page.js`, `app/admin/page.js`, `app/admin/actions.js`, `app/page.js`, `app/components/trackable-video.jsx`, `lib/media-repo.js`, `db/schema.sql`, `_recovered_5ss2_clean/src/*`; `cmd /c npx tsc --noEmit`; `cmd /c npm run build`; second `cmd /c npm run build`; `Remove-Item -LiteralPath 'D:\\Drum_Blonde\\.next' -Recurse -Force`; `Get-Date -Format o`; `git diff --stat -- app/admin/actions.js app/admin/clip-range-editor.jsx app/admin/media/page.js app/components/trackable-video.jsx app/globals.css app/page.js lib/media-repo.js app/admin/page.js`
+- Errors encountered: The first build attempt hit the repo’s recurring page-data failure with `SyntaxError: Unexpected end of JSON input`, the second hit `.next\\server\\pages-manifest.json` missing, and both were resolved by deleting the generated `.next` directory and rebuilding cleanly.
+- Fix or decision: Added an explicit spotlight toggle action in the media library, used `home_slot = 0` as the one-at-a-time explicit spotlight marker so no schema migration is required, added a client `ClipRangeEditor` with start/end sliders for video items, persisted clip settings in `processing_log`, updated homepage selection to prefer the explicit spotlight and otherwise fall back to the most-viewed featured video, updated featured playback to honor clip start/end boundaries, and switched admin-library video tiles to actual autoplaying `TrackableVideo` previews with muted playback outside the spotlight tile.
+- Rationale: This meets the requested admin workflow without requiring a live database migration and keeps the feature wiring surgical inside the current recovered media system.
+- Rollback plan: Remove `app/admin/clip-range-editor.jsx`, restore the previous versions of `app/admin/actions.js`, `app/admin/media/page.js`, `app/admin/page.js`, `app/components/trackable-video.jsx`, `app/globals.css`, `app/page.js`, and `lib/media-repo.js`, then delete `.next` and rerun `cmd /c npm run build` plus `cmd /c npx tsc --noEmit`.
+- Next steps: Browser-verify `/admin/media` with real video tiles, confirm the spotlight button updates homepage ordering as expected, and verify a trimmed featured clip loops only within its saved start/end range on `/`.
+
+## 2026-04-06T15:58:59.7574308-05:00 | Verify social handles and restyle homepage social buttons
+
+- Timestamp: `2026-04-06T15:58:59.7574308-05:00`
+- Task: Verify the homepage social usernames and redesign the public social buttons so each platform reads clearly again.
+- Context: The user reported that the social buttons looked visually broken and specifically suspected the YouTube username needed the underscore form instead of the plain `@drumblonde` label that was showing locally.
+- Files changed: `data/siteData.js`, `app/page.js`, `app/globals.css`, `_recovered_5ss2_clean/src/data/siteData.js`, `_recovered_5ss2_clean/src/app/page.js`, `_recovered_5ss2_clean/src/app/globals.css`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: `Get-Content AGENTS.md`; `Get-Content .agent/session_handoff.md`; targeted `rg`/`Get-Content` reads across root and recovered homepage files; `git diff -- ...`; `cmd /c npm run build` multiple times; `cmd /c npx tsc --noEmit`; direct profile metadata fetches with `curl.exe`/`Invoke-WebRequest` against YouTube, Instagram, TikTok, and Twitch; `Get-Date -Format o`
+- Errors encountered: The first build pass ended with transient `ENOENT: D:\\Drum_Blonde\\.next\\server\\edge-runtime-webpack.js` during Next.js trace collection, but the rerun passed cleanly without source changes. PowerShell `Invoke-WebRequest` parsing against several social pages was unreliable, so raw `curl.exe` HTML inspection was used instead.
+- Fix or decision: Verified from platform metadata that TikTok is `@drum_blonde`, Instagram is `@brookevinson`, Twitch is `drumdrumbrooke`, and YouTube resolves to the `Drum_Blonde` channel; updated the homepage data so the displayed YouTube handle and href use `@Drum_Blonde`; added an arrowed action pill to the social cards; and replaced the muted shared social-button styling with stronger platform-specific TikTok black, Instagram pink/orange, YouTube red, and Twitch purple surfaces/CTAs. Mirrored the same public-facing edits into the recovered baseline files.
+- Rationale: The public homepage should not rely on stale repo strings for social handles, and the button styling needs to communicate the platforms immediately instead of looking like generic dark cards.
+- Rollback plan: Restore the previous versions of `data/siteData.js`, `app/page.js`, and `app/globals.css`, restore the mirrored `_recovered_5ss2_clean/src/...` counterparts, and rerun `cmd /c npm run build`.
+- Next steps: Browser-check `/` locally or after the next deploy to confirm the revised social buttons read well on desktop and mobile, then deploy only if the visual pass matches the intended platform branding.
+
+## 2026-04-06T18:30:59.1333719-05:00 | Deploy homepage social-button refresh to production
+
+- Timestamp: `2026-04-06T18:30:59.1333719-05:00`
+- Task: Ship the verified social-handle/button refresh to the live `drumblonde.tjware.me` production site.
+- Context: After isolating the homepage files from unrelated local admin/homepage experiments, the user explicitly asked for the change to be deployed to the custom domain.
+- Files changed: `app/page.js`, `app/globals.css`, `data/siteData.js`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: `git status --short`; targeted `git diff`/`git diff --stat` reads for homepage files; `cmd /c npm run build`; `git add app/page.js app/globals.css data/siteData.js`; `git commit -m "Refresh homepage social buttons"`; `git rev-parse HEAD`; `git push origin main`; `cmd /c npx vercel ls`; `curl.exe -I https://drumblonde.tjware.me`; `Get-Date -Format o`
+- Errors encountered: A sandboxed `cmd /c npx vercel ls` retry hit the known npm-cache `EPERM` issue and had to be rerun outside the sandbox. No source-code fixes were needed during the deploy itself.
+- Fix or decision: Committed only the intended homepage files as `47eb752a1cbda54568d2349d7917857d7cdb3c40` (`Refresh homepage social buttons`), pushed `main`, confirmed production deployment `https://drum-blonde-lyyc6gcw7-byoroofers-projects.vercel.app` reached `Ready`, and confirmed `https://drumblonde.tjware.me` returned `HTTP/1.1 200 OK` from Vercel.
+- Rationale: Pushing a small, isolated deploy avoids accidentally shipping the unrelated spotlight/clip/admin work still present in the local tree.
+- Rollback plan: Revert commit `47eb752a1cbda54568d2349d7917857d7cdb3c40`, push the revert to `main`, wait for the replacement production deployment to reach `Ready`, and verify the custom domain is back on the prior homepage state.
+- Next steps: Browser-check `https://drumblonde.tjware.me/` and confirm the social buttons render with the intended platform colors and verified handles on the live site.
+
+## 2026-04-06T20:53:15.1127573-05:00 | Rebuild homepage video wall into a 3-up hero row plus 6-tile reel grid
+
+- Timestamp: `2026-04-06T20:53:15.1127573-05:00`
+- Task: Change the homepage top video area from the mixed stacked layout into three large videos, then render six smaller videos below in two rows of three with edge-to-edge tile spacing.
+- Context: The user wanted the homepage video section to look more like an Instagram reel library: three large videos up top, six smaller videos below, and no gaps between the video tiles.
+- Files changed: `app/page.js`, `app/globals.css`, `_recovered_5ss2_clean/src/app/page.js`, `_recovered_5ss2_clean/src/app/globals.css`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/decisions.md`, `.agent/open_issues.md`, `.agent/session_handoff.md`
+- Commands run: `Get-Content AGENTS.md`; `Get-Content .agent/session_handoff.md`; targeted `rg` and `Get-Content` reads across `app/page.js`, `app/globals.css`, `_recovered_5ss2_clean/src/app/page.js`, `_recovered_5ss2_clean/src/app/globals.css`, `data/siteData.js`, and `lib/media-repo.js`; `cmd /c npm run build`; `cmd /c npx tsc --noEmit`; `Get-Date -Format o`; `git status --short`
+- Errors encountered: The first `cmd /c npm run build` failed during prerender with `ReferenceError: featureLeadVideo is not defined` after the hero-layout refactor. The follow-up `cmd /c npx tsc --noEmit` failed only because the aborted build had not regenerated `.next/types`. Adding `const featureLeadVideo = featuredVideos[0] || null;` in both root and recovered homepage files resolved the real regression, and both validations then passed.
+- Fix or decision: Moved the hero copy into its own intro block, replaced the old mixed hero-video stack with a uniform 3-column `hero__video-library`, replaced the two-card reel strip with a 6-tile `hero__reel-strip--library`, hid video-card metadata in the library tiles, expanded the homepage video pool to nine slots by pulling from featured homepage selections plus eligible library videos, and mirrored the same public-facing change into the recovered baseline tree.
+- Rationale: The requested visual direction is a dense reel wall, and the old layout structurally could not satisfy `3 + 6` because it only allocated six media slots and mixed large cards with side text.
+- Rollback plan: Restore the prior versions of `app/page.js` and `app/globals.css`, restore the mirrored `_recovered_5ss2_clean/src/app/page.js` and `_recovered_5ss2_clean/src/app/globals.css` files, then rerun `cmd /c npm run build` and `cmd /c npx tsc --noEmit`.
+- Next steps: Browser-check the homepage on desktop and mobile to confirm the three featured videos, the six-tile reel grid, and the no-gap tile spacing match the intended reel-library look.
+
+## 2026-04-06T21:40:49.4667437-05:00 | Deploy homepage video wall to production
+
+- Timestamp: `2026-04-06T21:40:49.4667437-05:00`
+- Task: Deploy the homepage video-wall refactor to production without including unrelated admin/media worktree changes.
+- Context: After the local build and typecheck passed, the user asked to deploy the homepage change immediately.
+- Files changed: `app/page.js`, `app/globals.css`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: `git branch --show-current`; `git diff -- app/page.js app/globals.css`; `git status --short`; `git remote -v`; `git add app/page.js app/globals.css`; `git diff --cached --name-only`; `git diff --cached --stat`; `git commit -m "Rebuild homepage video wall"`; `git rev-parse HEAD`; `git push origin main`; `cmd /c npx vercel ls`; `curl.exe -I https://drumblonde.tjware.me`; escalated `cmd /c npx vercel ls`; `Get-Date -Format o`
+- Errors encountered: A follow-up sandboxed `cmd /c npx vercel ls` hit the recurring npm-cache `EPERM` issue and had to be rerun outside the sandbox. No source-code changes were needed during the deploy.
+- Fix or decision: Committed only the production homepage files as `2ac2e389ea19c990951ad3486efbb156c04bc5c3` (`Rebuild homepage video wall`), pushed `main`, confirmed Vercel production deployment `https://drum-blonde-1m2bfcrhj-byoroofers-projects.vercel.app` reached `Ready`, and confirmed `https://drumblonde.tjware.me/` returned `HTTP/1.1 200 OK`.
+- Rationale: Shipping only the isolated homepage files avoids pulling in the unrelated admin, env, and recovered-tree edits still present in the worktree.
+- Rollback plan: Revert commit `2ac2e389ea19c990951ad3486efbb156c04bc5c3`, push the revert to `origin/main`, wait for the replacement Vercel production deployment to reach `Ready`, and browser-check the custom domain.
+- Next steps: Hard-refresh the live homepage and visually confirm the three-across top video wall and the two-row six-tile reel grid on desktop and mobile.
+
+## 2026-04-06T21:49:43.7010960-05:00 | Add dedicated hero spotlight beside the homepage headline
+
+- Timestamp: `2026-04-06T21:49:43.7010960-05:00`
+- Task: Move one dedicated spotlight video into the hero intro so it sits to the right of the main homepage headline copy.
+- Context: After the `3 + 6` reel-wall deploy, the user wanted a separate spotlight slot positioned beside the “She picked up the drums and didn’t look back.” text while keeping the remaining video rows below.
+- Files changed: `app/page.js`, `app/globals.css`, `_recovered_5ss2_clean/src/app/page.js`, `_recovered_5ss2_clean/src/app/globals.css`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/decisions.md`, `.agent/session_handoff.md`
+- Commands run: targeted `Get-Content` reads across root and recovered homepage files; `cmd /c npm run build`; `cmd /c npx tsc --noEmit`; second `cmd /c npx tsc --noEmit`; `Get-Date -Format o`; `git status --short ...`
+- Errors encountered: The first `cmd /c npx tsc --noEmit` hit the repo’s recurring transient `.next/types` “file not found” mismatch even though the generated files existed after a successful build. A direct rerun passed with no source changes.
+- Fix or decision: Promoted the first prioritized video into a dedicated `spotlightVideo`, changed the hero intro into a two-column text-plus-spotlight layout, shifted the top three-tile row to use the next three videos, shifted the reel grid to the next six videos, and mirrored the same public-facing layout adjustment into the recovered baseline files.
+- Rationale: This gives the homepage a clearly defined spotlight location aligned with the hero message while preserving the dense reel-library rows underneath.
+- Rollback plan: Restore the previous versions of `app/page.js` and `app/globals.css`, restore the mirrored `_recovered_5ss2_clean/src/app/page.js` and `_recovered_5ss2_clean/src/app/globals.css` files, then rerun `cmd /c npm run build` and `cmd /c npx tsc --noEmit`.
+- Next steps: Browser-check the homepage locally or on the next deploy to confirm the spotlight card sits cleanly to the right of the hero text and the remaining video rows still read as intended.
+
+## 2026-04-06T21:53:16.7725999-05:00 | Deploy homepage spotlight hero video to production
+
+- Timestamp: `2026-04-06T21:53:16.7725999-05:00`
+- Task: Deploy the new homepage spotlight placement without including unrelated local admin/media work.
+- Context: After the local spotlight refactor validated cleanly, the user asked to deploy it immediately.
+- Files changed: `app/page.js`, `app/globals.css`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: `git diff -- app/page.js app/globals.css`; `git status --short`; `git rev-parse --short HEAD`; `git add app/page.js app/globals.css`; `git diff --cached --name-only`; `git diff --cached --stat`; `git commit -m "Add homepage spotlight hero video"`; `git rev-parse HEAD`; `git push origin main`; `cmd /c npx vercel ls`; `curl.exe -I https://drumblonde.tjware.me`; delayed `cmd /c npx vercel ls`; escalated `cmd /c npx vercel ls`; `Get-Date -Format o`
+- Errors encountered: The delayed sandboxed `cmd /c npx vercel ls` retry hit the recurring npm-cache `EPERM` issue and had to be rerun outside the sandbox. No source-code changes were needed during the deploy.
+- Fix or decision: Committed only the homepage spotlight files as `9c6d9f9076ad1c4e36de5ee8be9dc0b3baef2122` (`Add homepage spotlight hero video`), pushed `main`, confirmed Vercel production deployment `https://drum-blonde-bahatl4my-byoroofers-projects.vercel.app` reached `Ready`, and confirmed `https://drumblonde.tjware.me/` returned `HTTP/1.1 200 OK`.
+- Rationale: Shipping only the isolated homepage files keeps the deploy clean while the rest of the worktree remains intentionally dirty.
+- Rollback plan: Revert commit `9c6d9f9076ad1c4e36de5ee8be9dc0b3baef2122`, push the revert to `origin/main`, wait for the replacement Vercel deployment to reach `Ready`, and browser-check the custom domain.
+- Next steps: Hard-refresh the live homepage and confirm the spotlight video sits to the right of the hero text on desktop and collapses cleanly on mobile.
+
+## 2026-04-06T23:04:07.7156382-05:00 | Purge all non-starred media assets
+
+- Timestamp: `2026-04-06T23:04:07.7156382-05:00`
+- Task: Delete every media asset that is not starred from the live media library.
+- Context: The user explicitly asked to remove videos and images that are not starred. In this repo, “starred” maps to `featuredHome` / `featured_home === true`.
+- Files changed: `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: targeted `rg`/`Get-Content` reads across `app/admin/actions.js`, `app/admin/media/page.js`, `app/admin/page.js`, `lib/media-repo.js`, and `lib/supabase-admin.js`; inline Node/Supabase dry-run query against `media_assets`; inline Node/Supabase deletion script removing storage objects plus DB rows for every row where `featured_home !== true`; inline verification query; `Get-Date -Format o`
+- Errors encountered: No deletion errors. The queries and purge completed successfully on the first attempt.
+- Fix or decision: Deleted `26` unstarred media assets from Supabase-backed storage and `media_assets`: `19` videos and `7` images. Verification immediately after the purge showed `10` total remaining assets, all `10` starred and `0` unstarred.
+- Rationale: This fulfills the explicit cleanup request using the same storage and database model the app already uses for media management.
+- Rollback plan: Restore the deleted rows and storage objects from Supabase/database backups if available, or re-upload the removed assets manually if no backup snapshot exists.
+- Next steps: Hard-refresh `/admin/media` and `/` to confirm only starred items remain and the homepage/library now reflect the reduced media set.
+
+## 2026-04-07T01:03:29.0593115-05:00 | Add saveable high-quality media editor to the library
+
+- Timestamp: `2026-04-07T01:03:29.0593115-05:00`
+- Task: Turn the media-library edit flow into a real saveable editor for both videos and photos.
+- Context: The user wanted the edit button on each media tile to open a high-quality editor where videos or photos can be edited and saved directly from the library instead of only changing metadata.
+- Files changed: `app/admin/actions.js`, `app/admin/clip-range-editor.jsx`, `app/admin/media/page.js`, `app/admin/media-asset-editor.jsx`, `app/components/trackable-video.jsx`, `app/globals.css`, `lib/media-repo.js`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/decisions.md`, `.agent/open_issues.md`, `.agent/session_handoff.md`
+- Commands run: targeted `Get-Content`/`Select-String` reads across `app/admin/media/page.js`, `app/admin/actions.js`, `app/admin/clip-range-editor.jsx`, `app/components/trackable-video.jsx`, `app/components/media-thumbnail.jsx`, `app/globals.css`, `lib/media-repo.js`; `cmd /c npm run build`; `cmd /c npx tsc --noEmit`; `Get-Date -Format o`; `git status --short ...`
+- Errors encountered: No code changes were required during validation. Earlier iPhone Chrome preview work informed the shared `TrackableVideo` fallback path, but the editor feature itself built and typechecked cleanly on the first validation pass.
+- Fix or decision: Added a new `saveMediaEditAction` plus a repo-level `applyMediaEdits` pipeline that downloads the current asset, reprocesses videos through `ffmpeg` and photos through `sharp`, uploads the edited output plus fresh thumbnail, updates the existing row, resets clip-range playback metadata, and removes the old stored asset files. Added a new client editor panel inside the existing media-library detail view so videos can be trimmed or muted and images can be rotated and adjusted before saving.
+- Rationale: This gives the library a real editor that saves actual processed assets instead of pretending metadata-only changes are media editing.
+- Rollback plan: Restore the previous versions of `app/admin/actions.js`, `app/admin/clip-range-editor.jsx`, `app/admin/media/page.js`, `app/components/trackable-video.jsx`, `app/globals.css`, and `lib/media-repo.js`, remove `app/admin/media-asset-editor.jsx`, then rerun `cmd /c npm run build` and `cmd /c npx tsc --noEmit`.
+- Next steps: Browser-test `/admin/media` with real video and image assets, save one edited video and one edited photo, and confirm the resulting files, thumbnails, and metadata update correctly in the library.
+
+## 2026-04-07T01:12:01.4196675-05:00 | Add per-video tile rank controls for homepage rotation
+
+- Timestamp: `2026-04-07T01:12:01.4196675-05:00`
+- Task: Add a compact rank box with up/down controls to each video tile in the admin media library.
+- Context: The user wanted each video in `/admin/media` to expose a visible rank control with up/down arrows and adjustable `+1..+10` / `-1..-10` changes that affect the homepage rotation algorithm.
+- Files changed: `app/admin/actions.js`, `app/admin/media/page.js`, `app/globals.css`, `lib/media-repo.js`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/decisions.md`, `.agent/session_handoff.md`
+- Commands run: targeted `Get-Content`/`rg` reads across `app/admin/media/page.js`, `app/admin/actions.js`, `app/admin/tile-action-form.jsx`, `app/admin/page.js`, `app/globals.css`, `lib/media-repo.js`; `cmd /c npm run build`; two runs of `cmd /c npx tsc --noEmit`; `Get-Date -Format o`
+- Errors encountered: The first `cmd /c npx tsc --noEmit` hit the repo's recurring transient `.next/types` missing-file mismatch immediately after the build. A direct rerun passed without any source changes.
+- Fix or decision: Added a per-video rank control box on each library tile with a step selector from `1` to `10` plus up/down arrow buttons, added a silent server action to apply rank deltas without a scroll-jumping redirect, clamped saved `manual_rank` values to `-10..10`, and updated homepage priority sorting so `manual_rank` is considered explicitly before smart-score tiebreaking.
+- Rationale: This gives operators a fast way to bias homepage rotation directly from the grid, without opening the full edit view or relying on indirect engagement metrics alone.
+- Rollback plan: Restore the previous versions of `app/admin/actions.js`, `app/admin/media/page.js`, `app/globals.css`, and `lib/media-repo.js`, then rerun `cmd /c npm run build` and `cmd /c npx tsc --noEmit`.
+- Next steps: Browser-test the new rank box in `/admin/media`, confirm repeated clicks clamp at `-10` and `+10`, and verify starred video ordering changes as expected in the homepage rotation view.
+
+## 2026-04-07T01:46:33.8401827-05:00 | Deploy admin media editor and rank controls to production
+
+- Timestamp: `2026-04-07T01:46:33.8401827-05:00`
+- Task: Deploy the local admin media-library editor and rank-control changes without including unrelated worktree changes.
+- Context: After the new saveable media editor and per-video rank controls validated locally, the user asked to deploy them immediately.
+- Files changed: `app/admin/actions.js`, `app/admin/clip-range-editor.jsx`, `app/admin/media-asset-editor.jsx`, `app/admin/media/page.js`, `app/components/trackable-video.jsx`, `app/globals.css`, `lib/media-repo.js`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: `git status --short`; targeted `git diff -- ...`; `git remote -v`; `git add app/admin/actions.js app/admin/clip-range-editor.jsx app/admin/media-asset-editor.jsx app/admin/media/page.js app/components/trackable-video.jsx app/globals.css lib/media-repo.js`; `git diff --cached --name-only`; `git diff --cached --stat`; `git commit -m "Add admin media editor controls"`; `git rev-parse HEAD`; `git push origin main`; `cmd /c npx vercel ls`; delayed sandboxed `cmd /c npx vercel ls`; escalated `cmd /c npx vercel ls`; escalated `cmd /c curl.exe -I --ssl-no-revoke https://drumblonde.tjware.me/`; `Get-Date -Format o`
+- Errors encountered: A delayed sandboxed `cmd /c npx vercel ls` hit the recurring npm-cache `EPERM` issue and had to be rerun outside the sandbox. A PowerShell `Invoke-WebRequest -Method Head` check against the custom domain threw a `NullReferenceException`, so the final live-domain verification used `curl.exe --ssl-no-revoke` instead.
+- Fix or decision: Committed only the isolated admin/media files as `d5688106aa3530f65d6ec1e0f3147577bb30354f` (`Add admin media editor controls`), pushed `main`, confirmed Vercel production deployment `https://drum-blonde-pb78l3ay8-byoroofers-projects.vercel.app` reached `Ready`, and confirmed `https://drumblonde.tjware.me/` returned `HTTP/1.1 200 OK`.
+- Rationale: Shipping only the staged admin/media files keeps the production deploy focused on the requested editor and rank features while avoiding the many unrelated dirty files already present in the worktree.
+- Rollback plan: Revert commit `d5688106aa3530f65d6ec1e0f3147577bb30354f`, push the revert to `origin/main`, wait for the replacement Vercel production deployment to reach `Ready`, and confirm the custom domain still returns `200 OK`.
+- Next steps: Hard-refresh `/admin/media` on desktop and mobile, verify the new saveable editor works end to end, and confirm the tile `Rank` controls update homepage rotation ordering as intended.
+
+## 2026-04-07T17:40:09.0360666-05:00 | Fix spotlight pool selection and fallback ordering
+
+- Timestamp: `2026-04-07T17:40:09.0360666-05:00`
+- Task: Fix the broken spotlight button in the media library and make homepage spotlight selection honor spotlight pool membership plus manual rank precedence.
+- Context: The user reported that clicking the spotlight button on `/admin/media` deselected items instead of keeping them active, and wanted all spotlight-marked videos to participate in spotlight selection with manual rank winning inside that pool and a most-viewed fallback when nothing is spotlight-marked.
+- Files changed: `app/admin/media/page.js`, `app/admin/page.js`, `lib/media-repo.js`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/decisions.md`, `.agent/open_issues.md`, `.agent/session_handoff.md`
+- Commands run: targeted `Get-Content`/`rg` reads across `AGENTS.md`, `.agent/session_handoff.md`, `app/admin/media/page.js`, `app/admin/page.js`, `app/admin/actions.js`, `app/page.js`, `db/schema.sql`, `_recovered_5ss2_clean/src/db/schema.sql`, and `lib/media-repo.js`; `git diff --no-index -- app/page.js _recovered_5ss2_clean/src/app/page.js`; `git diff --no-index -- lib/media-repo.js _recovered_5ss2_clean/src/lib/media-repo.js`; `git diff --no-index -- app/admin/media/page.js _recovered_5ss2_clean/src/app/admin/page.js`; `cmd /c npx tsc --noEmit`; `cmd /c npm run build`; `Get-Date -Format o`; `git diff --stat -- app/admin/media/page.js app/admin/page.js lib/media-repo.js`; `git status --short ...`
+- Errors encountered: No build or typecheck errors occurred after the patch. The underlying bug came from the tile UI using only the current spotlight leader to decide whether the button was "on", while the data model still treated spotlight as legacy `home_slot = 0` state.
+- Fix or decision: Added a persistent spotlight-selection state reader from `processing_log` so multiple videos can remain spotlight-marked without schema changes, stopped clearing other spotlight selections during updates, changed spotlight-pool ranking to use `manualRank` before views, added a separate most-viewed fallback comparator when no spotlight item is selected, and updated `/admin/media` to key its spotlight button/badges off `item.spotlightHome` instead of only the current leader.
+- Rationale: This fixes the visible toggle bug immediately and aligns homepage spotlight behavior with the operator model the user asked for, while avoiding a risky schema migration in the middle of production-facing work.
+- Rollback plan: Restore the previous versions of `app/admin/media/page.js`, `app/admin/page.js`, and `lib/media-repo.js`, then rerun `cmd /c npx tsc --noEmit` and `cmd /c npm run build`.
+- Next steps: Browser-test `/admin/media` by marking multiple videos for spotlight, changing their rank values, and verifying the homepage spotlight leader and admin badges update as expected after refresh.
+
+## 2026-04-07T21:38:28.9805133-05:00 | Stop autoplaying media-library video tiles
+
+- Timestamp: `2026-04-07T21:38:28.9805133-05:00`
+- Task: Remove autoplaying video previews from the admin media library grid and show thumbnails only.
+- Context: The user explicitly asked for the media library to stop autoplaying videos and only display thumbs in the grid.
+- Files changed: `app/admin/media/page.js`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/session_handoff.md`
+- Commands run: `cmd /c npx tsc --noEmit`; `cmd /c npm run build`; `Get-Date -Format o`
+- Errors encountered: None.
+- Fix or decision: Replaced the grid's conditional `TrackableVideo` preview path with `MediaThumbnail` for all media tiles so videos render as static thumbs instead of autoplaying inline.
+- Rationale: Thumbnail-only tiles make the media library easier to scan and match the user's requested behavior exactly.
+- Rollback plan: Restore the previous version of `app/admin/media/page.js`, then rerun `cmd /c npx tsc --noEmit` and `cmd /c npm run build`.
+- Next steps: Hard-refresh `/admin/media` and confirm video tiles remain static thumbnails while the selected-item editor preview still plays normally when opened.
+
+## 2026-04-07T23:49:02.8400930-05:00 | Replace homepage-features list with rotating tile grid
+
+- Timestamp: `2026-04-07T23:49:02.8400930-05:00`
+- Task: Turn the admin homepage-features list into a 3-wide thumbnail tile grid and make homepage video ordering rotate every five minutes while preserving spotlight behavior.
+- Context: The user wanted the admin homepage-features section to stop showing stacked rows, instead show touching rectangular tiles three across, mark spotlight-selected videos with a spotlight icon, show rotation numbers on the other videos, rotate homepage videos every five minutes, ensure starring can truly unstar a starred video, and ensure spotlighting any video puts it into the homepage spotlight rotation.
+- Files changed: `app/admin/page.js`, `app/globals.css`, `lib/media-repo.js`, `.agent/work_log.md`, `.agent/rollback_log.md`, `.agent/decisions.md`, `.agent/open_issues.md`, `.agent/session_handoff.md`
+- Commands run: targeted `Get-Content`/`rg` reads across `app/admin/page.js`, `app/globals.css`, `app/components/media-thumbnail.jsx`, and `lib/media-repo.js`; `cmd /c npx tsc --noEmit`; `cmd /c npm run build`; `git diff --stat -- app/admin/page.js app/globals.css lib/media-repo.js app/admin/media/page.js`; `Get-Date -Format o`
+- Errors encountered: None. The admin feature-card markup needed to be layered in front of the older list/card block and then hidden with CSS instead of replacing the block directly in one patch because the file contained existing non-ASCII characters that made a large single hunk brittle.
+- Fix or decision: Added a new thumbnail-based admin homepage feature grid with 3 columns and touching rectangular tiles, overlaid spotlight markers or rotation numbers, and direct links back to `/admin/media`. Added a deterministic five-minute rotation helper to the homepage media selection path, applied that rotation to the ordered spotlight pool and the non-spotlight rotation pool, and changed unstar behavior so toggling star off also clears implicit spotlight selection unless spotlight is explicitly re-enabled in the same update.
+- Rationale: This matches the operator-facing layout the user asked for while keeping the homepage and admin dashboard in sync on the current active order.
+- Rollback plan: Restore the previous versions of `app/admin/page.js`, `app/globals.css`, and `lib/media-repo.js`, then rerun `cmd /c npx tsc --noEmit` and `cmd /c npm run build`.
+- Next steps: Browser-check `/admin` and `/` to confirm the new tile grid displays cleanly at desktop and mobile widths, spotlight markers/numbers appear correctly, and the active homepage order changes after the next five-minute boundary.

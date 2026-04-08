@@ -57,3 +57,35 @@ Track unresolved bugs, risks, and follow-ups. Close or update entries when the s
 - Context: `cmd /c npx tsc --noEmit` and `cmd /c npm run build` now pass locally, but the admin changes were validated only by build/type checks and code inspection.
 - Risk: Without a browser pass, small layout or interaction issues in the new sidebar shell, pagination flow, or thumbnail backfill path could still be present.
 - Next action: Browser-test `/admin`, `/admin/media`, starring, hiding, editing, and missing-thumbnail behavior with a real populated library.
+
+## ISSUE-2026-04-06-002 | Homepage reel-library layout still needs browser-level visual verification
+
+- Status: Open
+- Severity: Medium
+- Context: The homepage hero was refactored on `2026-04-06` to a three-across featured video wall plus a six-tile reel library with zero internal gaps, and the change was validated only by `cmd /c npm run build` and `cmd /c npx tsc --noEmit`.
+- Risk: Without a desktop/mobile browser pass, there is still a chance the edge-to-edge spacing, centered six-tile reel block, or iframe/video cropping differs from the intended Instagram-library look.
+- Next action: Browser-check `/` locally or on the next deployed build at desktop and mobile widths, specifically verifying the three large hero videos, the two rows of three smaller videos, and the no-gap tile seams.
+
+## ISSUE-2026-04-07-001 | Real media-editor save flow still needs browser verification on mobile and desktop
+
+- Status: Open
+- Severity: Medium
+- Context: The admin media library now exposes a real saveable asset editor that rewrites videos via `ffmpeg` and photos via `sharp`, but validation so far only covers `cmd /c npm run build` and `cmd /c npx tsc --noEmit`.
+- Risk: Without a real browser pass, the new editor could still have client-side issues around preview playback, form submission, iPhone Chrome interaction, or save-result refresh behavior even though the server-side build succeeds.
+- Next action: Browser-test `/admin/media` with at least one video trim/mute save and one image adjustment save on desktop and mobile, confirming preview behavior, successful persistence, and refreshed thumbnails.
+
+## ISSUE-2026-04-07-002 | Spotlight pool behavior still needs live admin verification
+
+- Status: Open
+- Severity: Medium
+- Context: Spotlight selection now persists as multi-item pool membership via logged `spotlight_home` state and the homepage leader now uses `manual_rank` first within the spotlight pool, but the fix has only been validated by code inspection plus `cmd /c npx tsc --noEmit` and `cmd /c npm run build`.
+- Risk: Without a live admin pass, there is still a chance the button state, refresh timing, or homepage leader selection behaves differently against real production data than it does in the static code path.
+- Next action: In `/admin/media`, mark multiple videos as spotlight, adjust their rank values, refresh the page, and verify the button states, badges, admin dashboard summary, and homepage spotlight leader all match the expected ordering.
+
+## ISSUE-2026-04-07-003 | Five-minute homepage rotation and admin tile grid still need browser verification
+
+- Status: Open
+- Severity: Medium
+- Context: The admin homepage-features section now renders a 3-column thumbnail tile grid and homepage video order now rotates on five-minute buckets, but the change has only been verified by `cmd /c npx tsc --noEmit` and `cmd /c npm run build`.
+- Risk: Without a browser pass, there is still a chance the tile cropping, edge-to-edge layout, mobile wrapping, or time-boundary rotation behavior differs from the intended design.
+- Next action: Browser-test `/admin` and `/` on desktop and mobile, then check again after the next five-minute boundary to confirm the grid layout and active homepage order rotate cleanly.

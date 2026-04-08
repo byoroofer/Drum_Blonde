@@ -432,50 +432,32 @@ export default async function AdminMediaPage({ searchParams }) {
           {pageItems.length ? (
             pageItems.map((item) => {
               const tileHref = buildMediaHref(baseParams, { edit: item.id, page: currentPage });
-              const isSpotlight = item.id === spotlightLeader?.id;
+              const isSpotlight = item.spotlightHome === true;
+              const isSpotlightLeader = item.id === spotlightLeader?.id;
               const isInRotation = rotationIds.has(item.id);
 
               return (
                 <article key={item.id} id={`tile-${item.id}`} className={`admin-library-tile${selectedItem?.id === item.id ? " admin-library-tile--active" : ""}${item.featuredHome ? " admin-library-tile--featured" : ""}`}>
                   <div className="admin-library-tile__preview">
                     <a href={`${tileHref}#tile-${item.id}`} className="admin-library-tile__preview-link">
-                      {item.kind === "video" && item.playbackUrl ? (
-                        <TrackableVideo
-                          className="admin-library-tile__media"
-                          src={item.url}
-                          playbackUrl={item.playbackUrl}
-                          poster={getThumbnailSrc(item)}
-                          title={item.title}
-                          mediaId={item.id}
-                          autoPlay
-                          loop
-                          muted={!isSpotlight}
-                          controls={false}
-                          eager={isSpotlight}
-                          showPlayButton={false}
-                          clipStartSeconds={item.clipStartSeconds}
-                          clipEndSeconds={item.clipEndSeconds}
-                        />
-                      ) : (
-                        <MediaThumbnail
-                          className="admin-library-tile__media"
-                          kind={item.kind}
-                          alt={item.title || ""}
-                          storedThumbnailSrc={item.storedThumbnailUrl}
-                          fallbackImageSrc={item.placeholderThumbnailUrl || getThumbnailSrc(item)}
-                          videoSrc={item.playbackUrl}
-                          durationSeconds={item.durationSeconds}
-                          thumbnailBackfillUrl={item.thumbnailBackfillUrl}
-                          cacheKey={`${item.id || item.url || "media"}-${item.updatedAt || item.createdAt || "0"}`}
-                        />
-                      )}
+                      <MediaThumbnail
+                        className="admin-library-tile__media"
+                        kind={item.kind}
+                        alt={item.title || ""}
+                        storedThumbnailSrc={item.storedThumbnailUrl}
+                        fallbackImageSrc={item.placeholderThumbnailUrl || getThumbnailSrc(item)}
+                        videoSrc={item.playbackUrl}
+                        durationSeconds={item.durationSeconds}
+                        thumbnailBackfillUrl={item.thumbnailBackfillUrl}
+                        cacheKey={`${item.id || item.url || "media"}-${item.updatedAt || item.createdAt || "0"}`}
+                      />
                       <div className="admin-library-tile__overlay" />
                       <div className="admin-library-tile__badges">
                         <span>{item.kind}</span>
                         {item.kind === "video" ? <span>{formatDurationLabel(item.durationSeconds)}</span> : null}
                         {item.kind === "video" ? <span>{formatClipRangeLabel(item.clipStartSeconds, item.clipEndSeconds, item.durationSeconds)}</span> : null}
                         {item.featuredHome ? <span className="admin-library-badge--featured">Starred</span> : null}
-                        {isSpotlight ? <span className="admin-library-badge--spotlight">Spotlight</span> : null}
+                        {isSpotlight ? <span className="admin-library-badge--spotlight">{isSpotlightLeader ? "Spotlight" : "Spotlight pool"}</span> : null}
                         {!isSpotlight && isInRotation ? <span className="admin-library-badge--rotation">Rotation</span> : null}
                         {item.isHidden ? <span className="admin-library-badge--hidden">Hidden</span> : null}
                       </div>
@@ -491,7 +473,7 @@ export default async function AdminMediaPage({ searchParams }) {
                     <TileActionForm action={toggleSpotlightSilent} className="admin-library-tile__spotlight-form">
                       <input type="hidden" name="id" value={item.id} />
                       <input type="hidden" name="spotlightHome" value={isSpotlight ? "false" : "true"} />
-                      <button type="submit" className={`admin-library-tile__spotlight${isSpotlight ? " admin-library-tile__spotlight--on" : ""}`} title={isSpotlight ? "Clear spotlight" : "Make homepage spotlight"}>
+                      <button type="submit" className={`admin-library-tile__spotlight${isSpotlight ? " admin-library-tile__spotlight--on" : ""}`} title={isSpotlight ? "Remove from homepage spotlight pool" : "Add to homepage spotlight pool"}>
                         ◉
                       </button>
                     </TileActionForm>
@@ -617,6 +599,7 @@ export default async function AdminMediaPage({ searchParams }) {
               <div className="admin-badge-row">
                 {selectedItem.featuredHome ? <span className="admin-pill admin-pill--accent">Starred</span> : null}
                 {selectedItem.id === spotlightLeader?.id ? <span className="admin-pill admin-pill--accent">Spotlight leader</span> : null}
+                {selectedItem.spotlightHome === true && selectedItem.id !== spotlightLeader?.id ? <span className="admin-pill">In spotlight pool</span> : null}
                 {rotationIds.has(selectedItem.id) && selectedItem.id !== spotlightLeader?.id ? <span className="admin-pill">In rotation</span> : null}
                 {selectedItem.kind === "video" ? <span className="admin-pill">{formatClipRangeLabel(selectedItem.clipStartSeconds, selectedItem.clipEndSeconds, selectedItem.durationSeconds)}</span> : null}
                 {selectedItem.isHidden ? <span className="admin-pill">Hidden</span> : null}
