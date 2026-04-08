@@ -1,6 +1,6 @@
 import TileActionForm from "@/app/admin/tile-action-form";
 import ClipRangeEditor from "@/app/admin/clip-range-editor";
-import { adjustManualRankSilent, deleteMediaSilent, toggleFeaturedHomeSilent, toggleHiddenSilent, toggleSpotlightSilent, updateMediaAction } from "@/app/admin/actions";
+import { adjustManualRankSilent, deleteMediaSilent, duplicateMediaAction, toggleFeaturedHomeSilent, toggleHiddenSilent, toggleSpotlightSilent, updateMediaAction } from "@/app/admin/actions";
 import MediaThumbnail from "@/app/components/media-thumbnail";
 import TrackableVideo from "@/app/components/trackable-video";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -337,6 +337,7 @@ export default async function AdminMediaPage({ searchParams }) {
           <strong>
             {saveState === "success" && "Media changes saved."}
             {saveState === "deleted" && "Media removed."}
+            {saveState === "duplicated" && "Media duplicated."}
             {saveState === "edited" && "Edited asset saved."}
             {saveState === "featured" && "Item added to homepage features."}
             {saveState === "unfeatured" && "Item removed from homepage features."}
@@ -533,6 +534,11 @@ export default async function AdminMediaPage({ searchParams }) {
 
                     <div className="admin-library-tile__actions">
                       <a className="admin-ghost-button" href={routeEditorHref}>Edit</a>
+                      <TileActionForm action={duplicateMediaAction} style={{ display: "contents" }}>
+                        <input type="hidden" name="id" value={item.id} />
+                        <input type="hidden" name="returnTo" value={buildMediaHref(baseParams, { page: currentPage })} />
+                        <button type="submit" className="admin-ghost-button">Duplicate</button>
+                      </TileActionForm>
                       <TileActionForm action={toggleHiddenSilent} style={{ display: "contents" }}>
                         <input type="hidden" name="id" value={item.id} />
                         <input type="hidden" name="isHidden" value={item.isHidden ? "false" : "true"} />
@@ -639,6 +645,11 @@ export default async function AdminMediaPage({ searchParams }) {
                   >
                     Open {selectedItem.kind === "video" ? "video" : "photo"} editor
                   </a>
+                  <form action={duplicateMediaAction}>
+                    <input type="hidden" name="id" value={selectedItem.id} />
+                    <input type="hidden" name="returnTo" value={buildMediaHref(baseParams, { edit: selectedItem.id })} />
+                    <button type="submit" className="admin-ghost-button">Duplicate asset</button>
+                  </form>
                   <a className="admin-ghost-button" href={buildAssetHref(selectedItem)} target="_blank" rel="noreferrer">
                     Open source asset
                   </a>

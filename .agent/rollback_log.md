@@ -540,3 +540,16 @@ pm run db:setup attempt.
   4. Run `cmd /c npx tsc --noEmit`.
   5. Browser-check `/admin/media` and `/admin/media/edit/[id]` to confirm tile `Edit` returns to the old inline flow and no derived-save route remains.
 - Rollback verification: Confirm `/admin/media` tile `Edit` no longer opens the dedicated route, confirm edited saves are no longer non-destructive derived assets, and confirm both validation commands pass after the restore.
+
+## 2026-04-08T02:44:34.9935107-05:00 | Deploy route-backed media editors to production
+
+- Timestamp: `2026-04-08T02:44:34.9935107-05:00`
+- Change summary: Committed the route-backed admin media editor stack and non-destructive derived-asset save flow as `5103d7b9dea4f58b03ea848e42d7f1b898dab5b8`, pushed it to `origin/main`, confirmed production deployment `https://drum-blonde-njbko5xqa-byoroofers-projects.vercel.app` reached `Ready`, and verified `https://drumblonde.tjware.me/` returned `HTTP/1.1 200 OK`.
+- Files changed: `.agent/rollback_log.md`, `.agent/session_handoff.md`, `.agent/work_log.md`
+- Commands run: `git commit -m "Add route-backed media editors"`; `git push origin main`; `cmd /c npx vercel ls`; escalated delayed rerun of `Start-Sleep -Seconds 20; cmd /c npx vercel ls`; `curl.exe -I --ssl-no-revoke https://drumblonde.tjware.me/`
+- Rollback steps:
+  1. Revert commit `5103d7b9dea4f58b03ea848e42d7f1b898dab5b8`.
+  2. Push the revert to `origin/main`.
+  3. Wait for the replacement Vercel production deployment to reach `Ready`.
+  4. Reopen `https://drumblonde.tjware.me/admin/media` and a direct `/admin/media/edit/[id]` URL and confirm the dedicated editor route and derived-asset save flow are gone.
+- Rollback verification: Confirm the new production deployment is no longer active, confirm the custom domain still returns `200 OK`, and confirm `/admin/media` tile `Edit` has returned to the prior inline-only flow.

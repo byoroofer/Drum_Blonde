@@ -14,6 +14,7 @@ import {
 import { hasAdminCredentials } from "@/lib/env";
 import {
   applyMediaEdits,
+  duplicateMediaAsset,
   createMediaAlbum,
   deleteMediaAsset,
   updateMediaAsset,
@@ -212,6 +213,30 @@ export async function deleteMediaAction(formData) {
   revalidatePath("/admin/media");
   revalidatePath("/gallery");
   redirect(buildAdminRedirectUrl(returnTo, { save: "deleted", media: id, edit: null, reason: null }));
+}
+
+export async function duplicateMediaAction(formData) {
+  await requireAdmin();
+
+  const id = String(formData.get("id") || "").trim();
+  const returnTo = normalizeAdminReturnTo(formData.get("returnTo"));
+
+  try {
+    const duplicated = await duplicateMediaAsset(id);
+    revalidatePath("/");
+    revalidatePath("/admin");
+    revalidatePath("/admin/media");
+    revalidatePath("/gallery");
+    redirect(buildAdminRedirectUrl(returnTo, { save: "duplicated", media: duplicated.id, reason: null }));
+  } catch (error) {
+    redirect(
+      buildAdminRedirectUrl(returnTo, {
+        save: "error",
+        media: id,
+        reason: error instanceof Error ? error.message : "Duplicate failed."
+      })
+    );
+  }
 }
 
 export async function saveMediaEditAction(formData) {
